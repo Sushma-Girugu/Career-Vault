@@ -2,15 +2,16 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
-const Profile = require("./models/Profile");
 
+const Profile = require("./models/Profile");
+const skillRoutes = require("./routes/skillRoutes");
 dotenv.config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+app.use("/api/skills", skillRoutes);
 connectDB();
 
 // Test route
