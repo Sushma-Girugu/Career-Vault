@@ -1,12 +1,23 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const Skill = require("../models/Skill");
 
 const router = express.Router();
 
-// Add a skill
+// ========================================
+// ADD A SKILL
+// POST /api/skills
+// ========================================
 router.post("/", async (req, res) => {
   try {
     const { name, level } = req.body;
+
+    // Validate input
+    if (!name || !level) {
+      return res.status(400).json({
+        message: "Skill name and level are required"
+      });
+    }
 
     const skill = new Skill({
       name,
@@ -26,10 +37,21 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get all skills
+// ========================================
+// GET ALL SKILLS
+// GET /api/skills
+// ========================================
 router.get("/", async (req, res) => {
+  console.log("========== GET /api/skills ==========");
+  console.log("Mongoose connection state:", mongoose.connection.readyState);
+  console.log("Skill model connection state:", Skill.db.readyState);
+
   try {
-    const skills = await Skill.find().sort({ createdAt: -1 });
+    const skills = await Skill.find().sort({
+      createdAt: -1
+    });
+
+    console.log("Skills fetched successfully:", skills.length);
 
     res.status(200).json(skills);
   } catch (error) {
@@ -42,13 +64,28 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Delete a skill
+// ========================================
+// DELETE A SKILL
+// DELETE /api/skills/:id
+// ========================================
 router.delete("/:id", async (req, res) => {
   try {
-    await Skill.findByIdAndDelete(req.params.id);
+    console.log("DELETE SKILL REQUEST RECEIVED");
+    console.log("Skill ID:", req.params.id);
+
+    const deletedSkill = await Skill.findByIdAndDelete(
+      req.params.id
+    );
+
+    if (!deletedSkill) {
+      return res.status(404).json({
+        message: "Skill not found"
+      });
+    }
 
     res.status(200).json({
-      message: "Skill deleted successfully"
+      message: "Skill deleted successfully",
+      skill: deletedSkill
     });
   } catch (error) {
     console.log("Skill delete error:", error.message);
