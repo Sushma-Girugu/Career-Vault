@@ -11,6 +11,7 @@ const connectDB = require("./config/db");
 const profileRoutes = require("./routes/profileRoutes");
 const skillRoutes = require("./routes/skillRoutes");
 const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
+const projectRoutes = require("./routes/projectRoutes");
 
 // Models
 const Skill = require("./models/Skill");
@@ -25,7 +26,7 @@ const app = express();
 app.use(cors());
 
 app.use(express.json());
-
+app.use("/api/projects", projectRoutes);
 
 // ==========================================
 // REQUEST LOGGER
