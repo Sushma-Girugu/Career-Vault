@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import JobTest from "./components/JobTest";
+import Dashboard from "./components/Dashboard/Dashboard";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -426,6 +427,12 @@ function App() {
       </button>
 
       <button
+        onClick={() => setPage("dashboard")}
+      >
+        Dashboard
+      </button>
+
+      <button
         onClick={() => setPage("profile")}
       >
         My Profile
@@ -477,6 +484,14 @@ function App() {
             in one place.
           </p>
         </div>
+      )}
+
+      {/* =================================================
+          DASHBOARD
+      ================================================= */}
+
+      {page === "dashboard" && (
+        <Dashboard setPage={setPage} />
       )}
 
       {/* =================================================
@@ -916,6 +931,25 @@ function App() {
           <p>
             Your resume information
             will appear here.
+          </p>
+        </div>
+      )}
+
+      {/* =================================================
+          JOB TESTS
+      ================================================= */}
+
+      {page === "jobtest" && (
+        <div>
+          <h2>Job Tests</h2>
+
+          <p>
+            Practice technical job tests here.
+          </p>
+
+          <p>
+            Job Test module will be integrated
+            soon.
           </p>
         </div>
       )}
