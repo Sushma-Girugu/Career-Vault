@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Resume from "./components/Resume";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -893,16 +894,7 @@ function App() {
           RESUME
       ================================================= */}
 
-      {page === "resume" && (
-        <div>
-          <h2>Resume</h2>
-
-          <p>
-            Your resume information
-            will appear here.
-          </p>
-        </div>
-      )}
+      {page === "resume" && <Resume />}
     </div>
   );
 }
