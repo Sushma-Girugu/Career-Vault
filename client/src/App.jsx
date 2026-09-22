@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import Resume from "./components/Resume";
+import JobTest from "./components/JobTest";
+import Dashboard from "./components/Dashboard/Dashboard";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -426,6 +428,12 @@ function App() {
       </button>
 
       <button
+        onClick={() => setPage("dashboard")}
+      >
+        Dashboard
+      </button>
+
+      <button
         onClick={() => setPage("profile")}
       >
         My Profile
@@ -442,6 +450,11 @@ function App() {
       >
         Job Applications
       </button>
+      <button
+  onClick={() => setPage("jobtest")}
+>
+  Job Test
+</button>
 
       <button
         onClick={() => setPage("projects")}
@@ -472,6 +485,14 @@ function App() {
             in one place.
           </p>
         </div>
+      )}
+
+      {/* =================================================
+          DASHBOARD
+      ================================================= */}
+
+      {page === "dashboard" && (
+        <Dashboard setPage={setPage} />
       )}
 
       {/* =================================================
@@ -884,9 +905,19 @@ function App() {
         <div>
           <h2>Projects</h2>
 
+
+
           <p>
             Add and manage your projects.
           </p>
+        </div>
+      )}
+
+      {/* JOB TEST / INTERVIEW PRACTICE */}
+
+      {page === "jobtest" && (
+        <div>
+          <JobTest />
         </div>
       )}
 
@@ -895,6 +926,25 @@ function App() {
       ================================================= */}
 
       {page === "resume" && <Resume />}
+
+      {/* =================================================
+          JOB TESTS
+      ================================================= */}
+
+      {page === "jobtest" && (
+        <div>
+          <h2>Job Tests</h2>
+
+          <p>
+            Practice technical job tests here.
+          </p>
+
+          <p>
+            Job Test module will be integrated
+            soon.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
