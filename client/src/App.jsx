@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import JobTest from "./components/JobTest";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -441,6 +442,11 @@ function App() {
       >
         Job Applications
       </button>
+      <button
+  onClick={() => setPage("jobtest")}
+>
+  Job Test
+</button>
 
       <button
         onClick={() => setPage("projects")}
@@ -883,9 +889,19 @@ function App() {
         <div>
           <h2>Projects</h2>
 
+
+
           <p>
             Add and manage your projects.
           </p>
+        </div>
+      )}
+
+      {/* JOB TEST / INTERVIEW PRACTICE */}
+
+      {page === "jobtest" && (
+        <div>
+          <JobTest />
         </div>
       )}
 
