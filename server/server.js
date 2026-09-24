@@ -1,7 +1,9 @@
+const authRoutes = require("./routes/authRoutes");
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
+const authMiddleware = require("./middleware/authMiddleware");
 
 dotenv.config();
 
@@ -18,14 +20,23 @@ const Skill = require("./models/Skill");
 
 const app = express();
 
-
 // ==========================================
 // MIDDLEWARE
 // ==========================================
 
 app.use(cors());
-
 app.use(express.json());
+
+// ==========================================
+// AUTH ROUTES
+// ==========================================
+
+app.use("/api/auth", authRoutes);
+
+// ==========================================
+// PROJECT ROUTES
+// ==========================================
+
 app.use("/api/projects", projectRoutes);
 
 // ==========================================
@@ -41,7 +52,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
 
 // ==========================================
 // API ROUTES
@@ -65,6 +75,20 @@ app.use(
   jobApplicationRoutes
 );
 
+// ==========================================
+// PROTECTED TEST ROUTE
+// ==========================================
+
+app.get(
+  "/api/protected",
+  authMiddleware,
+  (req, res) => {
+    res.json({
+      message: "You accessed a protected route!",
+      user: req.user
+    });
+  }
+);
 
 // ==========================================
 // JOB APPLICATION TEST ROUTE
@@ -77,7 +101,6 @@ app.get("/api/job-test", (req, res) => {
     message: "Job application route connection is working"
   });
 });
-
 
 // ==========================================
 // BASIC TEST ROUTES
@@ -95,13 +118,11 @@ app.get("/api/test", (req, res) => {
   });
 });
 
-
 // ==========================================
 // PORT
 // ==========================================
 
 const PORT = process.env.PORT || 5000;
-
 
 // ==========================================
 // START SERVER
@@ -136,7 +157,6 @@ const startServer = async () => {
       testSkills.length
     );
 
-
     // Start Express server
     app.listen(PORT, () => {
 
@@ -160,6 +180,10 @@ const startServer = async () => {
         `Job Test API: http://localhost:${PORT}/api/job-test`
       );
 
+      console.log(
+        `Protected API: http://localhost:${PORT}/api/protected`
+      );
+
     });
 
   } catch (error) {
@@ -175,7 +199,6 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-
 
 // ==========================================
 // RUN SERVER
