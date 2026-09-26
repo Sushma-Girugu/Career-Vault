@@ -1,11 +1,9 @@
+import Projects from "./components/Projects/Projects";
 import { useEffect, useState } from "react";
+import JobApplications from "./components/JobApplications/JobApplications";
 
 function App() {
   const [page, setPage] = useState("home");
-
-  // =====================================================
-  // PROFILE STATE
-  // =====================================================
 
   const [profile, setProfile] = useState({
     name: "",
@@ -15,34 +13,9 @@ function App() {
     year: ""
   });
 
-  // =====================================================
-  // SKILLS STATE
-  // =====================================================
-
   const [skills, setSkills] = useState([]);
   const [skillName, setSkillName] = useState("");
   const [skillLevel, setSkillLevel] = useState("Beginner");
-
-  // =====================================================
-  // JOB APPLICATION STATE
-  // =====================================================
-
-  const [applications, setApplications] = useState([]);
-
-  const [applicationForm, setApplicationForm] = useState({
-    company: "",
-    role: "",
-    status: "Applied",
-    appliedDate: "",
-    jobLink: ""
-  });
-
-  const [editingApplicationId, setEditingApplicationId] =
-    useState(null);
-
-  // =====================================================
-  // PROFILE FUNCTIONS
-  // =====================================================
 
   const handleChange = (e) => {
     setProfile({
@@ -79,10 +52,6 @@ function App() {
     }
   };
 
-  // =====================================================
-  // LOAD SKILLS
-  // =====================================================
-
   const loadSkills = async () => {
     try {
       const response = await fetch(
@@ -100,10 +69,6 @@ function App() {
       console.log("Skills fetch error:", error);
     }
   };
-
-  // =====================================================
-  // ADD SKILL
-  // =====================================================
 
   const addSkill = async () => {
     if (!skillName.trim()) {
@@ -131,8 +96,6 @@ function App() {
       if (response.ok) {
         alert("Skill added successfully!");
 
-        console.log("Saved skill:", data);
-
         setSkillName("");
         setSkillLevel("Beginner");
 
@@ -147,10 +110,6 @@ function App() {
     }
   };
 
-  // =====================================================
-  // DELETE SKILL
-  // =====================================================
-
   const deleteSkill = async (id) => {
     try {
       const response = await fetch(
@@ -164,9 +123,6 @@ function App() {
 
       if (response.ok) {
         alert("Skill deleted successfully!");
-
-        console.log("Deleted skill:", data);
-
         loadSkills();
       } else {
         alert("Failed to delete skill");
@@ -178,233 +134,9 @@ function App() {
     }
   };
 
-  // =====================================================
-  // LOAD JOB APPLICATIONS
-  // =====================================================
-
-  const loadApplications = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/job-applications"
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setApplications(data);
-      } else {
-        console.log(
-          "Failed to load job applications:",
-          data
-        );
-      }
-    } catch (error) {
-      console.log(
-        "Job applications fetch error:",
-        error
-      );
-    }
-  };
-
-  // =====================================================
-  // JOB APPLICATION FORM CHANGE
-  // =====================================================
-
-  const handleApplicationChange = (e) => {
-    setApplicationForm({
-      ...applicationForm,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  // =====================================================
-  // ADD / UPDATE JOB APPLICATION
-  // =====================================================
-
-  const saveApplication = async () => {
-    if (!applicationForm.company.trim()) {
-      alert("Please enter company name");
-      return;
-    }
-
-    if (!applicationForm.role.trim()) {
-      alert("Please enter job role");
-      return;
-    }
-
-    try {
-      let response;
-
-      // UPDATE
-      if (editingApplicationId) {
-        response = await fetch(
-          `http://localhost:5000/api/job-applications/${editingApplicationId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(applicationForm)
-          }
-        );
-      }
-
-      // ADD
-      else {
-        response = await fetch(
-          "http://localhost:5000/api/job-applications",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(applicationForm)
-          }
-        );
-      }
-
-      const data = await response.json();
-
-      if (response.ok) {
-        if (editingApplicationId) {
-          alert(
-            "Job application updated successfully!"
-          );
-        } else {
-          alert(
-            "Job application added successfully!"
-          );
-        }
-
-        console.log(
-          "Job application response:",
-          data
-        );
-
-        clearApplicationForm();
-
-        loadApplications();
-      } else {
-        alert(
-          "Failed to save job application"
-        );
-
-        console.log(data);
-      }
-    } catch (error) {
-      console.log(
-        "Job application save error:",
-        error
-      );
-
-      alert("Server connection failed");
-    }
-  };
-
-  // =====================================================
-  // EDIT JOB APPLICATION
-  // =====================================================
-
-  const editApplication = (application) => {
-    setApplicationForm({
-      company: application.company,
-      role: application.role,
-      status: application.status,
-      appliedDate: application.appliedDate
-        ? application.appliedDate.substring(0, 10)
-        : "",
-      jobLink: application.jobLink || ""
-    });
-
-    setEditingApplicationId(
-      application._id
-    );
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-  };
-
-  // =====================================================
-  // DELETE JOB APPLICATION
-  // =====================================================
-
-  const deleteApplication = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this job application?"
-    );
-
-    if (!confirmDelete) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/job-applications/${id}`,
-        {
-          method: "DELETE"
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert(
-          "Job application deleted successfully!"
-        );
-
-        console.log(
-          "Deleted application:",
-          data
-        );
-
-        loadApplications();
-      } else {
-        alert(
-          "Failed to delete job application"
-        );
-
-        console.log(data);
-      }
-    } catch (error) {
-      console.log(
-        "Job application delete error:",
-        error
-      );
-
-      alert("Server connection failed");
-    }
-  };
-
-  // =====================================================
-  // CLEAR JOB APPLICATION FORM
-  // =====================================================
-
-  const clearApplicationForm = () => {
-    setApplicationForm({
-      company: "",
-      role: "",
-      status: "Applied",
-      appliedDate: "",
-      jobLink: ""
-    });
-
-    setEditingApplicationId(null);
-  };
-
-  // =====================================================
-  // LOAD DATA WHEN APP STARTS
-  // =====================================================
-
   useEffect(() => {
     loadSkills();
-    loadApplications();
   }, []);
-
-  // =====================================================
-  // UI
-  // =====================================================
 
   return (
     <div>
@@ -414,68 +146,41 @@ function App() {
         Your Personal Career Management Platform
       </p>
 
-      {/* =================================================
-          NAVIGATION
-      ================================================= */}
-
-      <button
-        onClick={() => setPage("home")}
-      >
+      <button onClick={() => setPage("home")}>
         Home
       </button>
 
-      <button
-        onClick={() => setPage("profile")}
-      >
+      <button onClick={() => setPage("profile")}>
         My Profile
       </button>
 
-      <button
-        onClick={() => setPage("skills")}
-      >
+      <button onClick={() => setPage("skills")}>
         Skills
       </button>
 
-      <button
-        onClick={() => setPage("applications")}
-      >
+      <button onClick={() => setPage("applications")}>
         Job Applications
       </button>
 
-      <button
-        onClick={() => setPage("projects")}
-      >
+      <button onClick={() => setPage("projects")}>
         Projects
       </button>
 
-      <button
-        onClick={() => setPage("resume")}
-      >
+      <button onClick={() => setPage("resume")}>
         Resume
       </button>
 
       <hr />
 
-      {/* =================================================
-          HOME
-      ================================================= */}
-
       {page === "home" && (
         <div>
-          <h2>
-            Welcome to CareerVault
-          </h2>
+          <h2>Welcome to CareerVault</h2>
 
           <p>
-            Manage your career information
-            in one place.
+            Manage your career information in one place.
           </p>
         </div>
       )}
-
-      {/* =================================================
-          PROFILE
-      ================================================= */}
 
       {page === "profile" && (
         <div>
@@ -542,10 +247,6 @@ function App() {
         </div>
       )}
 
-      {/* =================================================
-          SKILLS
-      ================================================= */}
-
       {page === "skills" && (
         <div>
           <h2>Skills</h2>
@@ -597,28 +298,20 @@ function App() {
           <h3>My Skills</h3>
 
           {skills.length === 0 ? (
-            <p>
-              No skills added yet.
-            </p>
+            <p>No skills added yet.</p>
           ) : (
             <ul>
               {skills.map((skill) => (
                 <li key={skill._id}>
-                  <strong>
-                    {skill.name}
-                  </strong>
-
+                  <strong>{skill.name}</strong>
                   {" - "}
-
                   {skill.level}
 
                   {" "}
 
                   <button
                     onClick={() =>
-                      deleteSkill(
-                        skill._id
-                      )
+                      deleteSkill(skill._id)
                     }
                   >
                     Delete
@@ -630,276 +323,18 @@ function App() {
         </div>
       )}
 
-      {/* =================================================
-          JOB APPLICATIONS
-      ================================================= */}
-
       {page === "applications" && (
-        <div>
-          <h2>
-            Job Applications
-          </h2>
-
-          <p>
-            Track your job applications
-            and their current status.
-          </p>
-
-          <hr />
-
-          <h3>
-            {editingApplicationId
-              ? "Edit Job Application"
-              : "Add Job Application"}
-          </h3>
-
-          {/* COMPANY */}
-
-          <input
-            type="text"
-            name="company"
-            placeholder="Company Name"
-            value={
-              applicationForm.company
-            }
-            onChange={
-              handleApplicationChange
-            }
-          />
-
-          <br />
-          <br />
-
-          {/* ROLE */}
-
-          <input
-            type="text"
-            name="role"
-            placeholder="Job Role"
-            value={
-              applicationForm.role
-            }
-            onChange={
-              handleApplicationChange
-            }
-          />
-
-          <br />
-          <br />
-
-          {/* STATUS */}
-
-          <select
-            name="status"
-            value={
-              applicationForm.status
-            }
-            onChange={
-              handleApplicationChange
-            }
-          >
-            <option value="Applied">
-              Applied
-            </option>
-
-            <option value="Interview">
-              Interview
-            </option>
-
-            <option value="Selected">
-              Selected
-            </option>
-
-            <option value="Rejected">
-              Rejected
-            </option>
-          </select>
-
-          <br />
-          <br />
-
-          {/* APPLIED DATE */}
-
-          <input
-            type="date"
-            name="appliedDate"
-            value={
-              applicationForm.appliedDate
-            }
-            onChange={
-              handleApplicationChange
-            }
-          />
-
-          <br />
-          <br />
-
-          {/* JOB LINK */}
-
-          <input
-            type="url"
-            name="jobLink"
-            placeholder="Job Link"
-            value={
-              applicationForm.jobLink
-            }
-            onChange={
-              handleApplicationChange
-            }
-          />
-
-          <br />
-          <br />
-
-          {/* ADD / UPDATE */}
-
-          <button
-            onClick={saveApplication}
-          >
-            {editingApplicationId
-              ? "Update Application"
-              : "Add Application"}
-          </button>
-
-          {" "}
-
-          {/* CANCEL */}
-
-          {editingApplicationId && (
-            <button
-              onClick={
-                clearApplicationForm
-              }
-            >
-              Cancel Edit
-            </button>
-          )}
-
-          <hr />
-
-          {/* APPLICATION LIST */}
-
-          <h3>
-            My Applications
-          </h3>
-
-          {applications.length === 0 ? (
-            <p>
-              No job applications
-              added yet.
-            </p>
-          ) : (
-            <ul>
-              {applications.map(
-                (application) => (
-                  <li
-                    key={
-                      application._id
-                    }
-                  >
-                    <strong>
-                      {
-                        application.company
-                      }
-                    </strong>
-
-                    {" - "}
-
-                    {
-                      application.role
-                    }
-
-                    {" | Status: "}
-
-                    <strong>
-                      {
-                        application.status
-                      }
-                    </strong>
-
-                    {" | Applied: "}
-
-                    {application.appliedDate
-                      ? application.appliedDate.substring(
-                          0,
-                          10
-                        )
-                      : "N/A"}
-
-                    {" "}
-
-                    {application.jobLink && (
-                      <>
-                        {" | "}
-
-                        <a
-                          href={
-                            application.jobLink
-                          }
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Job Link
-                        </a>
-                      </>
-                    )}
-
-                    {" "}
-
-                    <button
-                      onClick={() =>
-                        editApplication(
-                          application
-                        )
-                      }
-                    >
-                      Edit
-                    </button>
-
-                    {" "}
-
-                    <button
-                      onClick={() =>
-                        deleteApplication(
-                          application._id
-                        )
-                      }
-                    >
-                      Delete
-                    </button>
-                  </li>
-                )
-              )}
-            </ul>
-          )}
-        </div>
+        <JobApplications />
       )}
 
-      {/* =================================================
-          PROJECTS
-      ================================================= */}
-
-      {page === "projects" && (
-        <div>
-          <h2>Projects</h2>
-
-          <p>
-            Add and manage your projects.
-          </p>
-        </div>
-      )}
-
-      {/* =================================================
-          RESUME
-      ================================================= */}
+      {page === "projects" && <Projects />}
 
       {page === "resume" && (
         <div>
           <h2>Resume</h2>
 
           <p>
-            Your resume information
-            will appear here.
+            Your resume information will appear here.
           </p>
         </div>
       )}
