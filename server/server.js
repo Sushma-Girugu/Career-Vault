@@ -13,7 +13,7 @@ const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const skillRoutes = require("./routes/skillRoutes");
 const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
-const projectRoutes = require("./routes/projectRoutes");
+const questionRoutes = require("./routes/questionRoutes");const projectRoutes = require("./routes/projectRoutes");
 
 // Models
 const Skill = require("./models/Skill");
@@ -52,21 +52,14 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/skills", skillRoutes);
 
 // Job Applications
-app.use("/api/job-applications", jobApplicationRoutes);
+app.use(
+  "/api/job-applications",
+  jobApplicationRoutes
+);
+app.use("/api/questions", questionRoutes);
 
-// Projects
 app.use("/api/projects", projectRoutes);
 
-// ==========================================
-// PROTECTED TEST ROUTE
-// ==========================================
-
-app.get("/api/protected", authMiddleware, (req, res) => {
-    res.json({
-        message: "You accessed a protected route!",
-        user: req.user
-    });
-});
 
 // ==========================================
 // JOB APPLICATION TEST ROUTE
