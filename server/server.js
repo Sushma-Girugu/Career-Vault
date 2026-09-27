@@ -11,7 +11,7 @@ const connectDB = require("./config/db");
 const profileRoutes = require("./routes/profileRoutes");
 const skillRoutes = require("./routes/skillRoutes");
 const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
-
+const questionRoutes = require("./routes/questionRoutes");
 // Models
 const Skill = require("./models/Skill");
 
@@ -63,7 +63,10 @@ app.use(
   "/api/job-applications",
   jobApplicationRoutes
 );
-
+app.use(
+  "/api/questions", 
+  questionRoutes
+);
 
 // ==========================================
 // JOB APPLICATION TEST ROUTE

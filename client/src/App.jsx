@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Dashboard from "./components/Dashboard/Dashboard";
-
+import JobTest from "./components/JobTest/JobTest";
 function App() {
   const [page, setPage] = useState("home");
 
@@ -459,6 +459,11 @@ function App() {
         onClick={() => setPage("resume")}
       >
         Resume
+      </button>
+      <button
+        onClick={() => setPage("jobtest")}
+      >
+        Job Tests
       </button>
 
       <hr />
@@ -922,21 +927,10 @@ function App() {
       {/* =================================================
           JOB TESTS
       ================================================= */}
-
-      {page === "jobtest" && (
-        <div>
-          <h2>Job Tests</h2>
-
-          <p>
-            Practice technical job tests here.
-          </p>
-
-          <p>
-            Job Test module will be integrated
-            soon.
-          </p>
-        </div>
-      )}
+        {page === "jobtest" && (
+          <JobTest />
+        )}
+      
     </div>
   );
 }
