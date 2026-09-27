@@ -1,9 +1,11 @@
 import Projects from "./components/Projects/Projects";
 import { useEffect, useState } from "react";
+import Dashboard from "./components/Dashboard/Dashboard";
+import JobTest from "./components/JobTest/JobTest";
 import "./App.css";
+import JobApplications from "./components/JobApplications/JobApplications";
 
 const API = "http://localhost:5000/api";
-import JobApplications from "./components/JobApplications/JobApplications";
 
 function App() {
   const [activePage, setActivePage] = useState("Dashboard");
@@ -877,18 +879,18 @@ function App() {
       >
         Resume
       </button>
+      <button
+    onClick={() => setPage("jobtest")}
+>
+    Job Tests
+</button>
 
-              </div>
 
-            </div>
+      <hr />
 
-          </section>
-
-        )}
-
-        {/* ======================================
-            PROFILE PAGE
-        ====================================== */}
+      {/* =================================================
+          HOME
+      ================================================= */}
 
         {activePage === "Profile" && (
 
@@ -1386,17 +1388,10 @@ function App() {
       {/* =================================================
           JOB TESTS
       ================================================= */}
-
-      {page === "jobtest" && (
-        <div>
-          <h2>Resume</h2>
-
-          <p>
-            Your resume information
-            will appear here.
-          </p>
-        </div>
-      )}
+        {page === "jobtest" && (
+          <JobTest />
+        )}
+      
     </div>
   );
 }
