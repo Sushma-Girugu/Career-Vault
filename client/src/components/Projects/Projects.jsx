@@ -1,58 +1,89 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./Projects.css";
 
 const API_URL = "http://localhost:5000/api/projects";
 
 function Projects() {
   const [projects, setProjects] = useState([]);
-
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     name: "",
     description: "",
     technologies: "",
-    projectLink: ""
+    githubUrl: "",
+    demoUrl: "",
   });
 
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
+  // Fetch projects
   const fetchProjects = async () => {
     try {
       const response = await fetch(API_URL);
-      const data = await response.json();
 
-      if (response.ok) {
-        setProjects(data);
+      if (!response.ok) {
+        throw new Error("Failed to fetch projects");
       }
+
+      const data = await response.json();
+      setProjects(data);
     } catch (error) {
-      console.error("Error fetching projects:", error);
+      console.error(error);
+      setMessage("Unable to load projects.");
     }
   };
 
-  const handleChange = (event) => {
-    setFormData({
-      ...formData,
-      [event.target.name]: event.target.value
+  useEffect(() => {
+  fetch(API_URL)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch projects");
+      }
+
+      return response.json();
+    })
+    .then((data) => {
+      setProjects(data);
+    })
+    .catch((error) => {
+      console.error(error);
+      setMessage("Unable to load projects.");
     });
+}, []);
+
+  // Handle input changes
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
   };
 
+  // Add / update project
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (
-      !formData.name ||
-      !formData.description ||
-      !formData.technologies
-    ) {
-      alert("Please fill all required fields.");
+    if (!form.name.trim() || !form.description.trim()) {
+      setMessage("Project name and description are required.");
       return;
     }
 
     setLoading(true);
+    setMessage("");
+
+    const projectData = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      technologies: form.technologies
+        .split(",")
+        .map((technology) => technology.trim())
+        .filter(Boolean),
+      githubUrl: form.githubUrl.trim(),
+      demoUrl: form.demoUrl.trim(),
+    };
 
     try {
       const url = editingId
@@ -64,242 +95,282 @@ function Projects() {
       const response = await fetch(url, {
         method,
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(projectData),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        alert(data.message || "Failed to save project.");
-        return;
+        throw new Error("Failed to save project");
       }
 
-      if (editingId) {
-        setProjects(
-          projects.map((project) =>
-            project._id === editingId ? data : project
-          )
-        );
+      await fetchProjects();
 
-        alert("Project updated successfully!");
-      } else {
-        setProjects([data, ...projects]);
+      setForm({
+        name: "",
+        description: "",
+        technologies: "",
+        githubUrl: "",
+        demoUrl: "",
+      });
 
-        alert("Project added successfully!");
-      }
-
-      resetForm();
+      setEditingId(null);
+      setMessage(
+        editingId
+          ? "Project updated successfully."
+          : "Project added successfully."
+      );
     } catch (error) {
-      console.error("Error saving project:", error);
-      alert("Unable to connect to server.");
+      console.error(error);
+      setMessage("Unable to save project.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Edit project
   const handleEdit = (project) => {
-    setFormData({
-      name: project.name,
-      description: project.description,
-      technologies: project.technologies,
-      projectLink: project.projectLink || ""
+    setForm({
+      name: project.name || "",
+      description: project.description || "",
+      technologies: (project.technologies || []).join(", "),
+      githubUrl: project.githubUrl || "",
+      demoUrl: project.demoUrl || "",
     });
 
     setEditingId(project._id);
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
+    setMessage("");
   };
 
+  // Delete project
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
+    const confirmed = window.confirm(
       "Are you sure you want to delete this project?"
     );
 
-    if (!confirmDelete) {
+    if (!confirmed) {
       return;
     }
 
     try {
       const response = await fetch(`${API_URL}/${id}`, {
-        method: "DELETE"
+        method: "DELETE",
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        alert(data.message || "Failed to delete project.");
-        return;
+        throw new Error("Failed to delete project");
       }
 
-      setProjects(
-        projects.filter((project) => project._id !== id)
-      );
+      await fetchProjects();
 
-      alert("Project deleted successfully!");
+      if (editingId === id) {
+        setEditingId(null);
+        setForm({
+          name: "",
+          description: "",
+          technologies: "",
+          githubUrl: "",
+          demoUrl: "",
+        });
+      }
+
+      setMessage("Project deleted successfully.");
     } catch (error) {
-      console.error("Error deleting project:", error);
-      alert("Unable to connect to server.");
+      console.error(error);
+      setMessage("Unable to delete project.");
     }
   };
 
-  const resetForm = () => {
-    setFormData({
+  // Cancel editing
+  const handleCancel = () => {
+    setEditingId(null);
+
+    setForm({
       name: "",
       description: "",
       technologies: "",
-      projectLink: ""
+      githubUrl: "",
+      demoUrl: "",
     });
 
-    setEditingId(null);
+    setMessage("");
   };
 
   return (
-    <div className="projects-container">
+    <section className="projects-page">
       <div className="projects-header">
-        <h2>Projects</h2>
-        <p>Add and manage your projects.</p>
+        <div>
+          <h2>Projects</h2>
+          <p>
+            Add and manage your academic, personal, and professional
+            projects.
+          </p>
+        </div>
       </div>
 
-      <div className="project-form-card">
-        <h3>
-          {editingId ? "Edit Project" : "Add New Project"}
-        </h3>
+      <div className="projects-layout">
+        {/* Project form */}
+        <div className="project-form-card">
+          <h3>{editingId ? "Edit Project" : "Add Project"}</h3>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Project Name *</label>
+          <form onSubmit={handleSubmit}>
+            <label>
+              Project Name
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder="e.g. Career Vault"
+                required
+              />
+            </label>
 
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter project name"
-            />
-          </div>
+            <label>
+              Description
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                placeholder="Describe your project..."
+                rows="4"
+                required
+              />
+            </label>
 
-          <div className="form-group">
-            <label>Description *</label>
+            <label>
+              Technologies
+              <input
+                type="text"
+                name="technologies"
+                value={form.technologies}
+                onChange={handleChange}
+                placeholder="React, Node.js, MongoDB"
+              />
+              <small>Separate technologies with commas.</small>
+            </label>
 
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Describe your project"
-              rows="4"
-            />
-          </div>
+            <label>
+              GitHub URL
+              <input
+                type="url"
+                name="githubUrl"
+                value={form.githubUrl}
+                onChange={handleChange}
+                placeholder="https://github.com/..."
+              />
+            </label>
 
-          <div className="form-group">
-            <label>Technologies *</label>
+            <label>
+              Demo URL
+              <input
+                type="url"
+                name="demoUrl"
+                value={form.demoUrl}
+                onChange={handleChange}
+                placeholder="https://..."
+              />
+            </label>
 
-            <input
-              type="text"
-              name="technologies"
-              value={formData.technologies}
-              onChange={handleChange}
-              placeholder="React, Node.js, MongoDB"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Project Link</label>
-
-            <input
-              type="url"
-              name="projectLink"
-              value={formData.projectLink}
-              onChange={handleChange}
-              placeholder="https://github.com/your-project"
-            />
-          </div>
-
-          <div className="form-buttons">
-            <button
-              type="submit"
-              className="save-button"
-              disabled={loading}
-            >
-              {loading
-                ? "Saving..."
-                : editingId
-                ? "Update Project"
-                : "Add Project"}
-            </button>
-
-            {editingId && (
+            <div className="project-form-actions">
               <button
-                type="button"
-                className="cancel-button"
-                onClick={resetForm}
+                type="submit"
+                className="project-primary-button"
+                disabled={loading}
               >
-                Cancel
+                {loading
+                  ? "Saving..."
+                  : editingId
+                  ? "Update Project"
+                  : "Add Project"}
               </button>
-            )}
+
+              {editingId && (
+                <button
+                  type="button"
+                  className="project-secondary-button"
+                  onClick={handleCancel}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+
+          {message && <p className="project-message">{message}</p>}
+        </div>
+
+        {/* Project list */}
+        <div className="projects-list">
+          <div className="projects-list-header">
+            <h3>Your Projects</h3>
+            <span>{projects.length}</span>
           </div>
-        </form>
-      </div>
 
-      <div className="projects-list">
-        <h3>My Projects</h3>
+          {projects.length === 0 ? (
+            <div className="empty-projects">
+              <h4>No projects yet</h4>
+              <p>Add your first project using the form.</p>
+            </div>
+          ) : (
+            projects.map((project) => (
+              <article className="project-card" key={project._id}>
+                <div className="project-card-content">
+                  <h4>{project.name}</h4>
 
-        {projects.length === 0 ? (
-          <div className="empty-projects">
-            <p>No projects added yet.</p>
-            <p>Add your first project using the form above.</p>
-          </div>
-        ) : (
-          <div className="project-grid">
-            {projects.map((project) => (
-              <div className="project-card" key={project._id}>
-                <h3>{project.name}</h3>
+                  <p>{project.description}</p>
 
-                <p className="project-description">
-                  {project.description}
-                </p>
+                  {project.technologies?.length > 0 && (
+                    <div className="project-technologies">
+                      {project.technologies.map((technology, index) => (
+                        <span key={`${technology}-${index}`}>
+                          {technology}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
-                <div className="technology-section">
-                  <strong>Technologies:</strong>
-                  <p>{project.technologies}</p>
+                  <div className="project-links">
+                    {project.githubUrl && (
+                      <a
+                        href={project.githubUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        GitHub
+                      </a>
+                    )}
+
+                    {project.demoUrl && (
+                      <a
+                        href={project.demoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Live Demo
+                      </a>
+                    )}
+                  </div>
                 </div>
 
-                {project.projectLink && (
-                  <a
-                    href={project.projectLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="view-button"
-                  >
-                    View Project
-                  </a>
-                )}
-
-                <div className="project-actions">
-                  <button
-                    className="edit-button"
-                    onClick={() => handleEdit(project)}
-                  >
+                <div className="project-card-actions">
+                  <button onClick={() => handleEdit(project)}>
                     Edit
                   </button>
 
                   <button
-                    className="delete-button"
+                    className="delete-project-button"
                     onClick={() => handleDelete(project._id)}
                   >
                     Delete
                   </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              </article>
+            ))
+          )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 

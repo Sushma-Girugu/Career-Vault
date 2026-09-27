@@ -5,29 +5,33 @@ const projectSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
 
     description: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
 
     technologies: {
-      type: String,
-      required: true,
-      trim: true
+      type: [String],
+      default: [],
     },
 
-    projectLink: {
+    githubUrl: {
       type: String,
-      trim: true
-    }
+      default: "",
+      trim: true,
+    },
+
+    demoUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Project", projectSchema);
