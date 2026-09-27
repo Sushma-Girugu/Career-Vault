@@ -2,45 +2,57 @@ const mongoose = require("mongoose");
 
 const jobApplicationSchema = new mongoose.Schema(
   {
-    company: {
-      type: String,
-      required: true
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
 
-    role: {
+    company: {
       type: String,
-      required: true
+      required: true,
+      trim: true,
+    },
+
+    jobTitle: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    location: {
+      type: String,
+      trim: true,
+    },
+
+    jobType: {
+      type: String,
+      enum: ["Internship", "Full-time", "Part-time"],
+      default: "Internship",
+    },
+
+    applicationDate: {
+      type: Date,
+      required: true,
     },
 
     status: {
       type: String,
-      required: true,
-      enum: [
-        "Applied",
-        "Interview",
-        "Selected",
-        "Rejected"
-      ],
-      default: "Applied"
-    },
-
-    appliedDate: {
-      type: Date,
-      required: true,
-      default: Date.now
+      enum: ["Applied", "Shortlisted", "Interview", "Rejected", "Selected"],
+      default: "Applied",
     },
 
     jobLink: {
       type: String,
-      default: ""
-    }
+      trim: true,
+    },
+
+    notes: {
+      type: String,
+      trim: true,
+    },
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
-module.exports = mongoose.model(
-  "JobApplication",
-  jobApplicationSchema
-);
+module.exports = mongoose.model("JobApplication", jobApplicationSchema);
