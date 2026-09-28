@@ -1,17 +1,56 @@
-import Projects from "./components/Projects/Projects";
 import { useEffect, useState } from "react";
-import Dashboard from "./components/Dashboard/Dashboard";
-import JobTest from "./components/JobTest/JobTest";
 import "./App.css";
-import JobApplications from "./components/JobApplications/JobApplications";
 
+import Projects from "./components/Projects/Projects";
+import JobTest from "./components/JobTest/JobTest";
+import Auth from "./components/Auth/Auth";
+import Gemini from "./components/Gemini/Gemini";
 const API = "http://localhost:5000/api";
 
 function App() {
-  const [activePage, setActivePage] = useState("Dashboard");
-  const [page, setPage] = useState("home");
+    const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("token")
+  );
+
+  const [currentUser, setCurrentUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+
+    return savedUser
+      ? JSON.parse(savedUser)
+      : null;
+  });
+
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+  };
   // =====================================================
-  // PROFILE STATE
+  // NAVIGATION
+  // =====================================================
+
+  const [activePage, setActivePage] = useState("Dashboard");
+
+  const navigation = [
+    { name: "Dashboard", icon: "⌂" },
+    { name: "Profile", icon: "◉" },
+    { name: "Skills", icon: "◆" },
+    { name: "Projects", icon: "▣" },
+    { name: "Job Applications", icon: "▤" },
+    { name: "Job Test", icon: "✓" },
+    { name: "Resume", icon: "▥" },
+    { name: "Gemini AI", icon: "✦"},
+  ];
+
+  // =====================================================
+  // PROFILE
   // =====================================================
 
   const [profile, setProfile] = useState({
@@ -26,33 +65,64 @@ function App() {
     github: "",
     portfolio: "",
     bio: ""
-});
+  });
 
-  const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  // =====================================================
+  // SKILLS
+  // =====================================================
+
+  const [skills, setSkills] = useState([]);
+  const [skillName, setSkillName] = useState("");
+  const [skillLevel, setSkillLevel] = useState("Beginner");
+  const [skillLoading, setSkillLoading] = useState(false);
+
+  // =====================================================
+  // JOB APPLICATIONS
+  // =====================================================
+
+  const [applications, setApplications] = useState([]);
+
+  const [applicationForm, setApplicationForm] = useState({
+    company: "",
+    jobTitle: "",
+    status: "Applied",
+    applicationDate: "",
+    jobLink: ""
+  });
+
+  const [editingApplicationId, setEditingApplicationId] = useState(null);
+
+  // =====================================================
+  // STATS
+  // =====================================================
+
   const [stats, setStats] = useState({
-    skills: 1,
+    skills: 0,
     projects: 0,
     applications: 0,
     profile: 0
   });
 
-  // ================================
-  // NAVIGATION
-  // ================================
+  // =====================================================
+  // AUTH HEADERS
+  // =====================================================
 
-  const navigation = [
-    { name: "Dashboard", icon: "⌂" },
-    { name: "Profile", icon: "◉" },
-    { name: "Skills", icon: "◆" },
-    { name: "Projects", icon: "▣" },
-    { name: "Job Applications", icon: "▤" },
-    { name: "Job Test", icon: "✓" },
-    { name: "Resume", icon: "▥" }
-  ];
+  const getHeaders = () => {
+    const token = localStorage.getItem("token");
+
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    };
+  };
+
+  // =====================================================
+  // NAVIGATION HANDLER
+  // =====================================================
 
   const handleNavigation = (page) => {
     setActivePage(page);
@@ -60,46 +130,11 @@ function App() {
     setError("");
   };
 
-  // ================================
-  // LOAD PROFILE
-  // ================================
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
-    try {
-      setProfileLoading(true);
-
-      const response = await fetch(`${API}/profile`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to load profile");
-      }
-
-      if (Array.isArray(data) && data.length > 0) {
-        const savedProfile = data[0];
-
-        setProfile((prev) => ({
-          ...prev,
-          ...savedProfile
-        }));
-
-        calculateProfileCompletion(savedProfile);
-      }
-    } catch (err) {
-      console.log("Profile loading error:", err.message);
-    } finally {
-      setProfileLoading(false);
-    }
-  };
-
   // =====================================================
-  // LOAD SKILLS
+  // PROFILE CHANGE
   // =====================================================
-    const handleChange = (e) => {
+
+  const handleChange = (e) => {
     const { name, value } = e.target;
 
     setProfile((prev) => ({
@@ -111,27 +146,10 @@ function App() {
     setMessage("");
   };
 
-  const loadSkills = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/skills"
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSkills(data);
-      } else {
-        console.log("Failed to load skills:", data);
-      }
-    } catch (error) {
-      console.log("Skills fetch error:", error);
-    }
-  };
-
   // =====================================================
-  // ADD SKILL
+  // PROFILE COMPLETION
   // =====================================================
+
   const calculateProfileCompletion = (data = profile) => {
     const fields = [
       data.name,
@@ -151,9 +169,7 @@ function App() {
       (field) => field && field.toString().trim() !== ""
     ).length;
 
-    const percentage = Math.round(
-      (completed / fields.length) * 100
-    );
+    const percentage = Math.round((completed / fields.length) * 100);
 
     setStats((prev) => ({
       ...prev,
@@ -162,52 +178,14 @@ function App() {
 
     return percentage;
   };
-  const addSkill = async () => {
-    if (!skillName.trim()) {
-      alert("Please enter a skill name");
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/skills",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            name: skillName,
-            level: skillLevel
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert("Skill added successfully!");
-
-        console.log("Saved skill:", data);
-
-        setSkillName("");
-        setSkillLevel("Beginner");
-
-        loadSkills();
-      } else {
-        alert("Failed to add skill");
-        console.log(data);
-      }
-    } catch (error) {
-      console.log("Skill save error:", error);
-      alert("Server connection failed");
-    }
-  };
 
   // =====================================================
-  // DELETE SKILL
+  // VALIDATE PROFILE
   // =====================================================
-    const validateProfile = () => {
+
+  const validateProfile = () => {
+    setError("");
+
     if (!profile.name.trim()) {
       setError("Full name is required.");
       return false;
@@ -223,8 +201,7 @@ function App() {
       return false;
     }
 
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(profile.email.trim())) {
       setError("Please enter a valid email address.");
@@ -241,31 +218,21 @@ function App() {
       return false;
     }
 
-    if (profile.phone) {
-      if (!/^[0-9]{10}$/.test(profile.phone)) {
-        setError(
-          "Phone number must contain exactly 10 digits."
-        );
-        return false;
-      }
+    if (profile.phone && !/^[0-9]{10}$/.test(profile.phone)) {
+      setError("Phone number must contain exactly 10 digits.");
+      return false;
     }
 
-    if (profile.year) {
-      if (!/^\d{4}$/.test(profile.year)) {
-        setError(
-          "Graduation year must contain 4 digits."
-        );
-        return false;
-      }
+    if (profile.year && !/^\d{4}$/.test(profile.year)) {
+      setError("Graduation year must contain 4 digits.");
+      return false;
     }
 
     if (
       profile.linkedin &&
       !profile.linkedin.startsWith("http")
     ) {
-      setError(
-        "LinkedIn URL must start with http:// or https://"
-      );
+      setError("LinkedIn URL must start with http:// or https://");
       return false;
     }
 
@@ -273,9 +240,7 @@ function App() {
       profile.github &&
       !profile.github.startsWith("http")
     ) {
-      setError(
-        "GitHub URL must start with http:// or https://"
-      );
+      setError("GitHub URL must start with http:// or https://");
       return false;
     }
 
@@ -283,39 +248,246 @@ function App() {
       profile.portfolio &&
       !profile.portfolio.startsWith("http")
     ) {
-      setError(
-        "Portfolio URL must start with http:// or https://"
-      );
+      setError("Portfolio URL must start with http:// or https://");
       return false;
     }
 
     return true;
   };
 
-  const deleteSkill = async (id) => {
+  // =====================================================
+  // LOAD PROFILE
+  // =====================================================
+
+  const loadProfile = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/skills/${id}`,
-        {
-          method: "DELETE"
-        }
-      );
+      setProfileLoading(true);
+      setError("");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.log("No login token found.");
+        return;
+      }
+
+      const response = await fetch(`${API}/profile`, {
+        method: "GET",
+        headers: getHeaders()
+      });
 
       const data = await response.json();
 
-      if (response.ok) {
-        alert("Skill deleted successfully!");
-
-        console.log("Deleted skill:", data);
-
-        loadSkills();
-      } else {
-        alert("Failed to delete skill");
-        console.log(data);
+      if (response.status === 404) {
+        console.log("No profile created yet.");
+        calculateProfileCompletion(profile);
+        return;
       }
-    } catch (error) {
-      console.log("Skill delete error:", error);
-      alert("Server connection failed");
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to load profile");
+      }
+
+      const savedProfile = data.profile || data;
+
+      if (savedProfile) {
+        setProfile((prev) => ({
+          ...prev,
+          ...savedProfile
+        }));
+
+        calculateProfileCompletion(savedProfile);
+      }
+    } catch (err) {
+      console.error("Profile loading error:", err);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  // =====================================================
+  // SAVE PROFILE
+  // =====================================================
+
+  const saveProfile = async (e) => {
+    if (e) {
+      e.preventDefault();
+    }
+
+    if (!validateProfile()) {
+      return;
+    }
+
+    try {
+      setProfileLoading(true);
+      setError("");
+      setMessage("");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Please login first.");
+        return;
+      }
+
+      const response = await fetch(`${API}/profile`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(profile)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to save profile");
+      }
+
+      const savedProfile = data.profile || data;
+
+      setProfile((prev) => ({
+        ...prev,
+        ...savedProfile
+      }));
+
+      calculateProfileCompletion(savedProfile);
+
+      setMessage("Profile saved successfully.");
+
+      alert("Profile saved successfully!");
+    } catch (err) {
+      console.error("Profile save error:", err);
+      setError(err.message || "Failed to save profile.");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  // =====================================================
+  // LOAD SKILLS
+  // =====================================================
+
+  const loadSkills = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setSkills([]);
+        return;
+      }
+
+      const response = await fetch(`${API}/skills`, {
+        method: "GET",
+        headers: getHeaders()
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to load skills");
+      }
+
+      setSkills(Array.isArray(data) ? data : []);
+
+      setStats((prev) => ({
+        ...prev,
+        skills: Array.isArray(data) ? data.length : 0
+      }));
+    } catch (err) {
+      console.error("Skills fetch error:", err);
+    }
+  };
+
+  // =====================================================
+  // ADD SKILL
+  // =====================================================
+
+  const addSkill = async (e) => {
+    if (e) {
+      e.preventDefault();
+    }
+
+    if (!skillName.trim()) {
+      alert("Please enter a skill name.");
+      return;
+    }
+
+    try {
+      setSkillLoading(true);
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Please login first.");
+        return;
+      }
+
+      const response = await fetch(`${API}/skills`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({
+          name: skillName.trim(),
+          level: skillLevel
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to add skill");
+      }
+
+      setSkillName("");
+      setSkillLevel("Beginner");
+
+      await loadSkills();
+
+      alert("Skill added successfully!");
+    } catch (err) {
+      console.error("Skill save error:", err);
+      alert(err.message || "Server connection failed.");
+    } finally {
+      setSkillLoading(false);
+    }
+  };
+
+  // =====================================================
+  // DELETE SKILL
+  // =====================================================
+
+  const deleteSkill = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this skill?"
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Please login first.");
+        return;
+      }
+
+      const response = await fetch(`${API}/skills/${id}`, {
+        method: "DELETE",
+        headers: getHeaders()
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete skill");
+      }
+
+      await loadSkills();
+
+      alert("Skill deleted successfully!");
+    } catch (err) {
+      console.error("Skill delete error:", err);
+      alert(err.message || "Server connection failed.");
     }
   };
 
@@ -325,80 +497,100 @@ function App() {
 
   const loadApplications = async () => {
     try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setApplications([]);
+        return;
+      }
+
       const response = await fetch(
-        "http://localhost:5000/api/job-applications"
+        `${API}/job-applications`,
+        {
+          method: "GET",
+          headers: getHeaders()
+        }
       );
 
       const data = await response.json();
 
-      if (response.ok) {
-        setApplications(data);
-      } else {
-        console.log(
-          "Failed to load job applications:",
-          data
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to load applications"
         );
       }
-    } catch (error) {
-      console.log(
+
+      setApplications(Array.isArray(data) ? data : []);
+
+      setStats((prev) => ({
+        ...prev,
+        applications: Array.isArray(data) ? data.length : 0
+      }));
+    } catch (err) {
+      console.error(
         "Job applications fetch error:",
-        error
+        err
       );
     }
   };
 
   // =====================================================
-  // JOB APPLICATION FORM CHANGE
+  // APPLICATION FORM CHANGE
   // =====================================================
 
   const handleApplicationChange = (e) => {
-    setApplicationForm({
-      ...applicationForm,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+
+    setApplicationForm((prev) => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   // =====================================================
-  // ADD / UPDATE JOB APPLICATION
+  // SAVE APPLICATION
   // =====================================================
 
-  const saveApplication = async () => {
+  const saveApplication = async (e) => {
+    if (e) {
+      e.preventDefault();
+    }
+
     if (!applicationForm.company.trim()) {
-      alert("Please enter company name");
+      alert("Please enter company name.");
       return;
     }
 
-    if (!applicationForm.role.trim()) {
-      alert("Please enter job role");
+    if (!applicationForm.jobTitle.trim()) {
+      alert("Please enter job role.");
       return;
     }
 
     try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Please login first.");
+        return;
+      }
+
       let response;
 
-      // UPDATE
       if (editingApplicationId) {
         response = await fetch(
-          `http://localhost:5000/api/job-applications/${editingApplicationId}`,
+          `${API}/job-applications/${editingApplicationId}`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json"
-            },
+            headers: getHeaders(),
             body: JSON.stringify(applicationForm)
           }
         );
-      }
-
-      // ADD
-      else {
+      } else {
         response = await fetch(
-          "http://localhost:5000/api/job-applications",
+          `${API}/job-applications`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
+            headers: getHeaders(),
             body: JSON.stringify(applicationForm)
           }
         );
@@ -406,60 +598,50 @@ function App() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        if (editingApplicationId) {
-          alert(
-            "Job application updated successfully!"
-          );
-        } else {
-          alert(
-            "Job application added successfully!"
-          );
-        }
-
-        console.log(
-          "Job application response:",
-          data
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to save job application"
         );
-
-        clearApplicationForm();
-
-        loadApplications();
-      } else {
-        alert(
-          "Failed to save job application"
-        );
-
-        console.log(data);
       }
-    } catch (error) {
-      console.log(
+
+      if (editingApplicationId) {
+        alert("Job application updated successfully!");
+      } else {
+        alert("Job application added successfully!");
+      }
+
+      clearApplicationForm();
+      await loadApplications();
+    } catch (err) {
+      console.error(
         "Job application save error:",
-        error
+        err
       );
 
-      alert("Server connection failed");
+      alert(
+        err.message || "Server connection failed."
+      );
     }
   };
 
   // =====================================================
-  // EDIT JOB APPLICATION
+  // EDIT APPLICATION
   // =====================================================
 
   const editApplication = (application) => {
     setApplicationForm({
-      company: application.company,
-      role: application.role,
-      status: application.status,
-      appliedDate: application.appliedDate
-        ? application.appliedDate.substring(0, 10)
+      company: application.company || "",
+      jobTitle: application.jobTitle || "",
+      status: application.status || "Applied",
+      appliedDate: application.applicationDate
+        ? application.applicationDate.substring(0, 10)
         : "",
       jobLink: application.jobLink || ""
     });
 
-    setEditingApplicationId(
-      application._id
-    );
+    setEditingApplicationId(application._id);
+
+    setActivePage("Job Applications");
 
     window.scrollTo({
       top: 0,
@@ -468,7 +650,7 @@ function App() {
   };
 
   // =====================================================
-  // DELETE JOB APPLICATION
+  // DELETE APPLICATION
   // =====================================================
 
   const deleteApplication = async (id) => {
@@ -481,53 +663,54 @@ function App() {
     }
 
     try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Please login first.");
+        return;
+      }
+
       const response = await fetch(
-        `http://localhost:5000/api/job-applications/${id}`,
+        `${API}/job-applications/${id}`,
         {
-          method: "DELETE"
+          method: "DELETE",
+          headers: getHeaders()
         }
       );
 
       const data = await response.json();
 
-      if (response.ok) {
-        alert(
-          "Job application deleted successfully!"
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to delete application"
         );
-
-        console.log(
-          "Deleted application:",
-          data
-        );
-
-        loadApplications();
-      } else {
-        alert(
-          "Failed to delete job application"
-        );
-
-        console.log(data);
       }
-    } catch (error) {
-      console.log(
+
+      alert("Job application deleted successfully!");
+
+      await loadApplications();
+    } catch (err) {
+      console.error(
         "Job application delete error:",
-        error
+        err
       );
 
-      alert("Server connection failed");
+      alert(
+        err.message || "Server connection failed."
+      );
     }
   };
 
   // =====================================================
-  // CLEAR JOB APPLICATION FORM
+  // CLEAR APPLICATION FORM
   // =====================================================
 
   const clearApplicationForm = () => {
     setApplicationForm({
       company: "",
-      role: "",
+      jobTitle: "",
       status: "Applied",
-      appliedDate: "",
+      applicationDate: "",
       jobLink: ""
     });
 
@@ -539,13 +722,68 @@ function App() {
   // =====================================================
 
   useEffect(() => {
+    loadProfile();
     loadSkills();
     loadApplications();
   }, []);
 
   // =====================================================
-  // UI
+  // RENDER
   // =====================================================
+    if (!isAuthenticated) {
+    return (
+      <Auth onLogin={handleLogin} />
+    );
+  }
+  return (
+    <div className="app">
+
+      {/* =================================================
+          SIDEBAR
+      ================================================= */}
+
+      <aside className="sidebar">
+
+        <div className="logo">
+          CareerVault
+        </div>
+
+        <nav>
+          {navigation.map((item) => (
+            <button
+              key={item.name}
+              type="button"
+              className={
+                activePage === item.name
+                  ? "nav-item active"
+                  : "nav-item"
+              }
+              onClick={() =>
+                handleNavigation(item.name)
+              }
+            >
+              <span className="nav-icon">
+                {item.icon}
+              </span>
+
+              <span>
+                {item.name}
+              </span>
+            </button>
+          ))}
+        </nav>
+
+      </aside>
+
+      {/* =================================================
+          MAIN CONTENT
+      ================================================= */}
+
+      <main className="main-content">
+
+        {/* =================================================
+            TOP BAR
+        ================================================= */}
 
         <header className="topbar">
 
@@ -569,7 +807,6 @@ function App() {
               ♢
             </div>
 
-            {/* CLICKABLE PROFILE AVATAR */}
             <button
               type="button"
               className="avatar"
@@ -585,22 +822,45 @@ function App() {
                 : "U"}
             </button>
 
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={handleLogout}
+              title="Logout"
+            >
+              Logout
+            </button>
+
           </div>
 
         </header>
 
-        {/* ======================================
+        {/* =================================================
+            MESSAGES
+        ================================================= */}
+
+        {message && (
+          <div className="success-message">
+            {message}
+          </div>
+        )}
+
+        {error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )}
+
+        {/* =================================================
             DASHBOARD
-        ====================================== */}
+        ================================================= */}
 
         {activePage === "Dashboard" && (
-
           <section>
 
             <div className="welcome-card">
 
               <div>
-
                 <span className="small-label">
                   YOUR CAREER JOURNEY
                 </span>
@@ -624,7 +884,6 @@ function App() {
                 >
                   Complete Profile →
                 </button>
-
               </div>
 
               <div className="welcome-circle">
@@ -640,7 +899,6 @@ function App() {
             </div>
 
             <div className="section-heading">
-
               <div>
                 <h2>
                   Career Overview
@@ -650,13 +908,11 @@ function App() {
                   Your current career progress
                 </p>
               </div>
-
             </div>
 
             <div className="stats-grid">
 
               <div className="stat-card">
-
                 <div className="stat-icon purple">
                   ◉
                 </div>
@@ -674,11 +930,9 @@ function App() {
                     Completion
                   </small>
                 </div>
-
               </div>
 
               <div className="stat-card">
-
                 <div className="stat-icon blue">
                   ◆
                 </div>
@@ -696,11 +950,9 @@ function App() {
                     Skills added
                   </small>
                 </div>
-
               </div>
 
               <div className="stat-card">
-
                 <div className="stat-icon green">
                   ▣
                 </div>
@@ -718,11 +970,9 @@ function App() {
                     Projects added
                   </small>
                 </div>
-
               </div>
 
               <div className="stat-card">
-
                 <div className="stat-icon orange">
                   ▤
                 </div>
@@ -740,7 +990,6 @@ function App() {
                     Job applications
                   </small>
                 </div>
-
               </div>
 
             </div>
@@ -776,7 +1025,7 @@ function App() {
                     style={{
                       width: `${stats.profile}%`
                     }}
-                  ></div>
+                  />
 
                 </div>
 
@@ -857,13 +1106,19 @@ function App() {
                   <b>→</b>
                 </button>
 
-      <button
-        onClick={() => setPage("projects")}
-      >
-        Projects
-      </button>
+                <button
+                  type="button"
+                  className="action-btn"
+                  onClick={() =>
+                    handleNavigation("Skills")
+                  }
+                >
+                  <span>◆</span>
+                  Add Skill
+                  <b>→</b>
+                </button>
 
-      <button
+                <button
                   type="button"
                   className="action-btn"
                   onClick={() =>
@@ -874,40 +1129,53 @@ function App() {
                   Add Project
                   <b>→</b>
                 </button>
-      <button
-        onClick={() => setPage("resume")}
-      >
-        Resume
-      </button>
-      <button
-    onClick={() => setPage("jobtest")}
->
-    Job Tests
-</button>
 
+                <button
+                  type="button"
+                  className="action-btn"
+                  onClick={() =>
+                    handleNavigation("Resume")
+                  }
+                >
+                  <span>📄</span>
+                  Resume
+                  <b>→</b>
+                </button>
 
-      <hr />
+                <button
+                  type="button"
+                  className="action-btn"
+                  onClick={() =>
+                    handleNavigation("Job Test")
+                  }
+                >
+                  <span>✓</span>
+                  Job Tests
+                  <b>→</b>
+                </button>
 
-      {/* =================================================
-          HOME
-      ================================================= */}
+              </div>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* =================================================
+            PROFILE
+        ================================================= */}
 
         {activePage === "Profile" && (
-
           <section className="profile-page">
-
-            {/* PROFILE HEADER */}
 
             <div className="profile-header-card">
 
               <div className="profile-avatar">
-
                 {profile.name
                   ? profile.name
                       .charAt(0)
                       .toUpperCase()
                   : "U"}
-
               </div>
 
               <div>
@@ -933,8 +1201,6 @@ function App() {
               </div>
 
             </div>
-
-            {/* PROFILE FORM */}
 
             <form
               className="profile-form"
@@ -997,401 +1263,730 @@ function App() {
                       Phone
                     </label>
 
-          <input
-            type="text"
-            name="branch"
-            placeholder="Branch"
-            value={profile.branch}
-            onChange={handleChange}
-          />
-
-          <br />
-          <br />
-
-          <input
-            type="text"
-            name="year"
-            placeholder="Year"
-            value={profile.year}
-            onChange={handleChange}
-          />
-
-          <br />
-          <br />
-
-          <button onClick={saveProfile}>
-            Save Profile
-          </button>
-        </div>
-      )}
-
-      {/* =================================================
-          SKILLS
-      ================================================= */}
-
-      {page === "skills" && (
-        <div>
-          <h2>Skills</h2>
-
-          <p>
-            Add and manage your technical skills.
-          </p>
-
-            <input
-              type="text"
-              name="location"
-              value={profile.location}
-              onChange={handleChange}
-              placeholder="City, State"
-            />
-
-          <input
-            type="text"
-            placeholder="Enter skill name"
-            value={skillName}
-            onChange={(e) =>
-              setSkillName(e.target.value)
-            }
-          />
-
-          <br />
-          <br />
-
-          <select
-            value={skillLevel}
-            onChange={(e) =>
-              setSkillLevel(e.target.value)
-            }
-          >
-            <option value="Beginner">
-              Beginner
-            </option>
-
-            <option value="Intermediate">
-              Intermediate
-            </option>
-
-            <option value="Advanced">
-              Advanced
-            </option>
-          </select>
-
-          <br />
-          <br />
-
-          <button onClick={addSkill}>
-            Add Skill
-          </button>
-
-          <hr />
-
-          <h3>My Skills</h3>
-
-          {skills.length === 0 ? (
-            <p>
-              No skills added yet.
-            </p>
-          ) : (
-            <ul>
-              {skills.map((skill) => (
-                <li key={skill._id}>
-                  <strong>
-                    {skill.name}
-                  </strong>
-
-                  {" - "}
-
-                  {skill.level}
-
-                  {" "}
-
-                  <button
-                    onClick={() =>
-                      deleteSkill(
-                        skill._id
-                      )
-                    }
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {/* =================================================
-          JOB APPLICATIONS
-      ================================================= */}
-
-      {page === "applications" && (
-        <div>
-          <h2>
-            Job Applications
-          </h2>
-
-          <p>
-            Track your job applications
-            and their current status.
-          </p>
-
-          <hr />
-
-          <h3>
-            {editingApplicationId
-              ? "Edit Job Application"
-              : "Add Job Application"}
-          </h3>
-
-          {/* COMPANY */}
-
-          <input
-            type="text"
-            name="company"
-            placeholder="Company Name"
-            value={
-              applicationForm.company
-            }
-            onChange={
-              handleApplicationChange
-            }
-          />
-
-          <br />
-          <br />
-
-          {/* ROLE */}
-
-          <input
-            type="text"
-            name="role"
-            placeholder="Job Role"
-            value={
-              applicationForm.role
-            }
-            onChange={
-              handleApplicationChange
-            }
-          />
-
-          <br />
-          <br />
-
-          {/* STATUS */}
-
-          <select
-            name="status"
-            value={
-              applicationForm.status
-            }
-            onChange={
-              handleApplicationChange
-            }
-          >
-            <option value="Applied">
-              Applied
-            </option>
-
-            <option value="Interview">
-              Interview
-            </option>
-
-            <option value="Selected">
-              Selected
-            </option>
-
-            <option value="Rejected">
-              Rejected
-            </option>
-          </select>
-
-          <br />
-          <br />
-
-          {/* APPLIED DATE */}
-
-          <input
-            type="date"
-            name="appliedDate"
-            value={
-              applicationForm.appliedDate
-            }
-            onChange={
-              handleApplicationChange
-            }
-          />
-
-          <br />
-          <br />
-
-          {/* JOB LINK */}
-
-          <input
-            type="url"
-            name="jobLink"
-            placeholder="Job Link"
-            value={
-              applicationForm.jobLink
-            }
-            onChange={
-              handleApplicationChange
-            }
-          />
-
-          <br />
-          <br />
-
-          {/* ADD / UPDATE */}
-
-          <button
-            onClick={saveApplication}
-          >
-            {editingApplicationId
-              ? "Update Application"
-              : "Add Application"}
-          </button>
-
-          {" "}
-
-          {/* CANCEL */}
-
-          {editingApplicationId && (
-            <button
-              onClick={
-                clearApplicationForm
-              }
-            >
-              Cancel Edit
-            </button>
-          )}
-
-          <hr />
-
-          {/* APPLICATION LIST */}
-
-          <h3>
-            My Applications
-          </h3>
-
-          {applications.length === 0 ? (
-            <p>
-              No job applications
-              added yet.
-            </p>
-          ) : (
-            <ul>
-              {applications.map(
-                (application) => (
-                  <li
-                    key={
-                      application._id
-                    }
-                  >
-                    <strong>
-                      {
-                        application.company
-                      }
-                    </strong>
-
-                    {" - "}
-
-                    {
-                      application.role
-                    }
-
-                    {" | Status: "}
-
-                    <strong>
-                      {
-                        application.status
-                      }
-                    </strong>
-
-                    {" | Applied: "}
-
-                    {application.appliedDate
-                      ? application.appliedDate.substring(
-                          0,
-                          10
-                        )
-                      : "N/A"}
-
-                    {" "}
-
-                    {application.jobLink && (
-                      <>
-                        {" | "}
-
-                        <a
-                          href={
-                            application.jobLink
-                          }
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Job Link
-                        </a>
-                      </>
-                    )}
-
-                    {" "}
-
-                    <button
-                      onClick={() =>
-                        editApplication(
-                          application
-                        )
-                      }
-                    >
-                      Edit
-                    </button>
-
-                    {" "}
-
-                    <button
-                      onClick={() =>
-                        deleteApplication(
-                          application._id
-                        )
-                      }
-                    >
-                      Delete
-                    </button>
-                  </li>
-                )
-              )}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {/* =================================================
-          PROJECTS
-      ================================================= */}
-
-      {page === "projects" && (
-        <div>
-          <h2>Projects</h2>
-
-          <p>
-            Add and manage your projects.
-          </p>
-        </div>
-      )}
-
-      {/* =================================================
-          RESUME
-      ================================================= */}
-
-      {page === "resume" && <Resume profile={profile} />}
-      {/* =================================================
-          JOB TESTS
-      ================================================= */}
-        {page === "jobtest" && (
-          <JobTest />
+                    <input
+                      type="text"
+                      name="phone"
+                      value={profile.phone}
+                      onChange={handleChange}
+                      placeholder="10 digit phone number"
+                    />
+
+                  </div>
+
+                  <div className="field">
+
+                    <label>
+                      Location
+                    </label>
+
+                    <input
+                      type="text"
+                      name="location"
+                      value={profile.location}
+                      onChange={handleChange}
+                      placeholder="City, State"
+                    />
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* EDUCATION */}
+
+              <div className="form-section">
+
+                <div className="form-title">
+
+                  <h3>
+                    Education
+                  </h3>
+
+                  <p>
+                    Add your academic information.
+                  </p>
+
+                </div>
+
+                <div className="form-grid">
+
+                  <div className="field">
+
+                    <label>
+                      College / University *
+                    </label>
+
+                    <input
+                      type="text"
+                      name="college"
+                      value={profile.college}
+                      onChange={handleChange}
+                      placeholder="College / University"
+                    />
+
+                  </div>
+
+                  <div className="field">
+
+                    <label>
+                      Branch / Course *
+                    </label>
+
+                    <input
+                      type="text"
+                      name="branch"
+                      value={profile.branch}
+                      onChange={handleChange}
+                      placeholder="Computer Science"
+                    />
+
+                  </div>
+
+                  <div className="field">
+
+                    <label>
+                      Graduation Year
+                    </label>
+
+                    <input
+                      type="text"
+                      name="year"
+                      value={profile.year}
+                      onChange={handleChange}
+                      placeholder="2027"
+                      maxLength="4"
+                    />
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* PROFESSIONAL LINKS */}
+
+              <div className="form-section">
+
+                <div className="form-title">
+
+                  <h3>
+                    Professional Links
+                  </h3>
+
+                  <p>
+                    Add your professional profiles.
+                  </p>
+
+                </div>
+
+                <div className="form-grid">
+
+                  <div className="field">
+
+                    <label>
+                      LinkedIn
+                    </label>
+
+                    <input
+                      type="url"
+                      name="linkedin"
+                      value={profile.linkedin}
+                      onChange={handleChange}
+                      placeholder="https://linkedin.com/in/..."
+                    />
+
+                  </div>
+
+                  <div className="field">
+
+                    <label>
+                      GitHub
+                    </label>
+
+                    <input
+                      type="url"
+                      name="github"
+                      value={profile.github}
+                      onChange={handleChange}
+                      placeholder="https://github.com/..."
+                    />
+
+                  </div>
+
+                  <div className="field">
+
+                    <label>
+                      Portfolio
+                    </label>
+
+                    <input
+                      type="url"
+                      name="portfolio"
+                      value={profile.portfolio}
+                      onChange={handleChange}
+                      placeholder="https://yourportfolio.com"
+                    />
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* BIO */}
+
+              <div className="form-section">
+
+                <div className="form-title">
+
+                  <h3>
+                    About You
+                  </h3>
+
+                  <p>
+                    Write a short professional bio.
+                  </p>
+
+                </div>
+
+                <div className="field">
+
+                  <label>
+                    Bio
+                  </label>
+
+                  <textarea
+                    name="bio"
+                    value={profile.bio}
+                    onChange={handleChange}
+                    placeholder="Write a short description about yourself..."
+                    rows="5"
+                  />
+
+                </div>
+
+              </div>
+
+              {/* SAVE */}
+
+              <div className="form-actions">
+
+                <button
+                  type="submit"
+                  className="primary-btn"
+                  disabled={profileLoading}
+                >
+                  {profileLoading
+                    ? "Saving..."
+                    : "Save Profile"}
+                </button>
+
+              </div>
+
+            </form>
+
+          </section>
         )}
-      
+
+        {/* =================================================
+            SKILLS
+        ================================================= */}
+
+        {activePage === "Skills" && (
+          <section>
+
+            <div className="section-heading">
+
+              <div>
+                <h2>
+                  Skills
+                </h2>
+
+                <p>
+                  Add and manage your technical skills.
+                </p>
+              </div>
+
+            </div>
+
+            <div className="panel">
+
+              <form onSubmit={addSkill}>
+
+                <div className="field">
+
+                  <label>
+                    Skill Name
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="Enter skill name"
+                    value={skillName}
+                    onChange={(e) =>
+                      setSkillName(e.target.value)
+                    }
+                  />
+
+                </div>
+
+                <div className="field">
+
+                  <label>
+                    Skill Level
+                  </label>
+
+                  <select
+                    value={skillLevel}
+                    onChange={(e) =>
+                      setSkillLevel(e.target.value)
+                    }
+                  >
+                    <option value="Beginner">
+                      Beginner
+                    </option>
+
+                    <option value="Intermediate">
+                      Intermediate
+                    </option>
+
+                    <option value="Advanced">
+                      Advanced
+                    </option>
+                  </select>
+
+                </div>
+
+                <button
+                  type="submit"
+                  className="primary-btn"
+                  disabled={skillLoading}
+                >
+                  {skillLoading
+                    ? "Adding..."
+                    : "Add Skill"}
+                </button>
+
+              </form>
+
+            </div>
+
+            <div className="panel">
+
+              <div className="panel-header">
+
+                <div>
+                  <h3>
+                    My Skills
+                  </h3>
+
+                  <p>
+                    {skills.length} skill
+                    {skills.length !== 1
+                      ? "s"
+                      : ""} added
+                  </p>
+                </div>
+
+              </div>
+
+              {skills.length === 0 ? (
+                <p>
+                  No skills added yet.
+                </p>
+              ) : (
+                <ul className="skills-list">
+
+                  {skills.map((skill) => (
+                    <li key={skill._id}>
+
+                      <div>
+                        <strong>
+                          {skill.name}
+                        </strong>
+
+                        <span>
+                          {" - "}
+                          {skill.level}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          deleteSkill(skill._id)
+                        }
+                      >
+                        Delete
+                      </button>
+
+                    </li>
+                  ))}
+
+                </ul>
+              )}
+
+            </div>
+
+          </section>
+        )}
+
+        {/* =================================================
+            PROJECTS
+        ================================================= */}
+
+        {activePage === "Projects" && (
+          <section>
+
+            <div className="section-heading">
+
+              <div>
+                <h2>
+                  Projects
+                </h2>
+
+                <p>
+                  Add and manage your projects.
+                </p>
+              </div>
+
+            </div>
+
+            <Projects />
+
+          </section>
+        )}
+      {/* =================================================
+    GEMINI AI
+================================================= */}
+
+{activePage === "Gemini AI" && (
+  <Gemini
+    profile={profile}
+    skills={skills}
+  />
+)}
+        {/* =================================================
+            JOB APPLICATIONS
+        ================================================= */}
+
+        {activePage === "Job Applications" && (
+          <section>
+
+            <div className="section-heading">
+
+              <div>
+                <h2>
+                  Job Applications
+                </h2>
+
+                <p>
+                  Track your job applications
+                  and their current status.
+                </p>
+              </div>
+
+            </div>
+
+            <div className="panel">
+
+              <h3>
+                {editingApplicationId
+                  ? "Edit Job Application"
+                  : "Add Job Application"}
+              </h3>
+
+              <form onSubmit={saveApplication}>
+
+                <div className="field">
+
+                  <label>
+                    Company
+                  </label>
+
+                  <input
+                    type="text"
+                    name="company"
+                    placeholder="Company Name"
+                    value={
+                      applicationForm.company
+                    }
+                    onChange={
+                      handleApplicationChange
+                    }
+                  />
+
+                </div>
+
+                <div className="field">
+
+                  <label>
+                    Job Role
+                  </label>
+
+                  <input
+                    type="text"
+                    name="jobTitle"
+                    placeholder="Job Title"
+                    value={
+                      applicationForm.jobTitle
+                    }
+                    onChange={
+                      handleApplicationChange
+                    }
+                  />
+
+                </div>
+
+                <div className="field">
+
+                  <label>
+                    Status
+                  </label>
+
+                  <select
+                    name="status"
+                    value={
+                      applicationForm.status
+                    }
+                    onChange={
+                      handleApplicationChange
+                    }
+                  >
+                    <option value="Applied">
+                      Applied
+                    </option>
+
+                    <option value="Interview">
+                      Interview
+                    </option>
+
+                    <option value="Selected">
+                      Selected
+                    </option>
+
+                    <option value="Rejected">
+                      Rejected
+                    </option>
+                  </select>
+
+                </div>
+
+                <div className="field">
+
+                  <label>
+                    Applied Date
+                  </label>
+
+                  <input
+                    type="date"
+                    name="applicationDate"
+                    value={
+                      applicationForm.applicationDate
+                    }
+                    onChange={
+                      handleApplicationChange
+                    }
+                  />
+
+                </div>
+
+                <div className="field">
+
+                  <label>
+                    Job Link
+                  </label>
+
+                  <input
+                    type="url"
+                    name="jobLink"
+                    placeholder="https://..."
+                    value={
+                      applicationForm.jobLink
+                    }
+                    onChange={
+                      handleApplicationChange
+                    }
+                  />
+
+                </div>
+
+                <button
+                  type="submit"
+                  className="primary-btn"
+                >
+                  {editingApplicationId
+                    ? "Update Application"
+                    : "Add Application"}
+                </button>
+
+                {editingApplicationId && (
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={
+                      clearApplicationForm
+                    }
+                  >
+                    Cancel Edit
+                  </button>
+                )}
+
+              </form>
+
+            </div>
+
+            <div className="panel">
+
+              <h3>
+                My Applications
+              </h3>
+
+              {applications.length === 0 ? (
+                <p>
+                  No job applications added yet.
+                </p>
+              ) : (
+                <ul className="applications-list">
+
+                  {applications.map(
+                    (application) => (
+                      <li
+                        key={application._id}
+                      >
+
+                        <div>
+
+                          <strong>
+                            {application.company}
+                          </strong>
+
+                          <span>
+                            {" - "}
+                            {application.role}
+                          </span>
+
+                          <p>
+                            Status:{" "}
+                            <strong>
+                              {application.status}
+                            </strong>
+                          </p>
+
+                          <p>
+                            Applied:{" "}
+                            {application.applicationDate
+                              ? application.applicationDate.substring(
+                                  0,
+                                  10
+                                )
+                              : "N/A"}
+                          </p>
+
+                          {application.jobLink && (
+                            <a
+                              href={
+                                application.jobLink
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Job Link
+                            </a>
+                          )}
+
+                        </div>
+
+                        <div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              editApplication(
+                                application
+                              )
+                            }
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              deleteApplication(
+                                application._id
+                              )
+                            }
+                          >
+                            Delete
+                          </button>
+
+                        </div>
+
+                      </li>
+                    )
+                  )}
+
+                </ul>
+              )}
+
+            </div>
+
+          </section>
+        )}
+
+        {/* =================================================
+            JOB TEST
+        ================================================= */}
+
+        {activePage === "Job Test" && (
+          <section>
+
+            <JobTest />
+
+          </section>
+        )}
+
+        {/* =================================================
+            RESUME
+        ================================================= */}
+
+        {activePage === "Resume" && (
+          <section>
+
+            <div className="section-heading">
+
+              <div>
+                <h2>
+                  Resume
+                </h2>
+
+                <p>
+                  Manage your resume.
+                </p>
+              </div>
+
+            </div>
+
+            <div className="panel">
+
+              <h3>
+                Resume Module
+              </h3>
+
+              <p>
+                Your resume builder can be
+                connected here.
+              </p>
+
+            </div>
+
+          </section>
+        )}
+
+      </main>
+
     </div>
   );
 }

@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
@@ -14,11 +16,11 @@ const profileRoutes = require("./routes/profileRoutes");
 const skillRoutes = require("./routes/skillRoutes");
 const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
 const questionRoutes = require("./routes/questionRoutes");const projectRoutes = require("./routes/projectRoutes");
+const geminiRoutes = require("./routes/geminiRoutes");
 
 // Models
 const Skill = require("./models/Skill");
 
-dotenv.config();
 
 const app = express();
 
@@ -50,7 +52,7 @@ app.use("/api/profile", profileRoutes);
 
 // Skills
 app.use("/api/skills", skillRoutes);
-
+app.use("/api/gemini", geminiRoutes);
 // Job Applications
 app.use(
   "/api/job-applications",
