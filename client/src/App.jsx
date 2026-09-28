@@ -279,10 +279,27 @@ function App() {
       const data = await response.json();
 
       if (response.status === 404) {
-        console.log("No profile created yet.");
-        calculateProfileCompletion(profile);
-        return;
-      }
+  console.log("No profile created yet.");
+
+  const emptyProfile = {
+    name: "",
+    email: "",
+    college: "",
+    branch: "",
+    year: "",
+    phone: "",
+    location: "",
+    linkedin: "",
+    github: "",
+    portfolio: "",
+    bio: ""
+  };
+
+  setProfile(emptyProfile);
+  calculateProfileCompletion(emptyProfile);
+
+  return;
+}
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to load profile");
@@ -721,11 +738,33 @@ function App() {
   // LOAD DATA WHEN APP STARTS
   // =====================================================
 
-  useEffect(() => {
-    loadProfile();
-    loadSkills();
-    loadApplications();
-  }, []);
+ useEffect(() => {
+  if (!isAuthenticated) {
+    const emptyProfile = {
+      name: "",
+      email: "",
+      college: "",
+      branch: "",
+      year: "",
+      phone: "",
+      location: "",
+      linkedin: "",
+      github: "",
+      portfolio: "",
+      bio: ""
+    };
+
+    setProfile(emptyProfile);
+    setSkills([]);
+    setApplications([]);
+
+    return;
+  }
+
+  loadProfile();
+  loadSkills();
+  loadApplications();
+}, [isAuthenticated]);
 
   // =====================================================
   // RENDER
@@ -815,11 +854,9 @@ function App() {
               }
               title="Open Profile"
             >
-              {profile.name
-                ? profile.name
-                    .charAt(0)
-                    .toUpperCase()
-                : "U"}
+             {currentUser?.name
+  ? currentUser.name.charAt(0).toUpperCase()
+  : "U"}
             </button>
 
             <button
