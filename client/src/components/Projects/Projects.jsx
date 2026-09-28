@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./Projects.css";
+import ProjectCard from "./ProjectCard";
 
 const API_URL = "http://localhost:5000/api/projects";
 
@@ -27,6 +28,8 @@ function Projects() {
 
       if (response.ok) {
         setProjects(data);
+      } else {
+        alert(data.message || "Failed to fetch projects.");
       }
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -43,13 +46,28 @@ function Projects() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (
-      !formData.name ||
-      !formData.description ||
-      !formData.technologies
-    ) {
-      alert("Please fill all required fields.");
+    if (!formData.name.trim()) {
+      alert("Please enter a project name.");
       return;
+    }
+
+    if (!formData.description.trim()) {
+      alert("Please enter a project description.");
+      return;
+    }
+
+    if (!formData.technologies.trim()) {
+      alert("Please enter the technologies used.");
+      return;
+    }
+
+    if (formData.projectLink.trim()) {
+      try {
+        new URL(formData.projectLink);
+      } catch {
+        alert("Please enter a valid project URL.");
+        return;
+      }
     }
 
     setLoading(true);
@@ -66,7 +84,12 @@ function Projects() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          technologies: formData.technologies.trim(),
+          projectLink: formData.projectLink.trim()
+        })
       });
 
       const data = await response.json();
@@ -101,9 +124,9 @@ function Projects() {
 
   const handleEdit = (project) => {
     setFormData({
-      name: project.name,
-      description: project.description,
-      technologies: project.technologies,
+      name: project.name || "",
+      description: project.description || "",
+      technologies: project.technologies || "",
       projectLink: project.projectLink || ""
     });
 
@@ -256,45 +279,12 @@ function Projects() {
         ) : (
           <div className="project-grid">
             {projects.map((project) => (
-              <div className="project-card" key={project._id}>
-                <h3>{project.name}</h3>
-
-                <p className="project-description">
-                  {project.description}
-                </p>
-
-                <div className="technology-section">
-                  <strong>Technologies:</strong>
-                  <p>{project.technologies}</p>
-                </div>
-
-                {project.projectLink && (
-                  <a
-                    href={project.projectLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="view-button"
-                  >
-                    View Project
-                  </a>
-                )}
-
-                <div className="project-actions">
-                  <button
-                    className="edit-button"
-                    onClick={() => handleEdit(project)}
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    className="delete-button"
-                    onClick={() => handleDelete(project._id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
+              <ProjectCard
+                key={project._id}
+                project={project}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}

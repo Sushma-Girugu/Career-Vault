@@ -10,6 +10,8 @@ const profileRoutes = require("./routes/profileRoutes");
 const skillRoutes = require("./routes/skillRoutes");
 const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
 const projectRoutes = require("./routes/projectRoutes");
+const achievementRoutes = require("./routes/achievementRoutes");
+const socialLinkRoutes = require("./routes/socialLinkRoutes");
 
 const app = express();
 
@@ -18,25 +20,17 @@ app.use(express.json());
 
 connectDB();
 
-app.use(
-  "/api/profile",
-  profileRoutes
-);
+app.use("/api/profile", profileRoutes);
 
-app.use(
-  "/api/skills",
-  skillRoutes
-);
+app.use("/api/skills", skillRoutes);
 
-app.use(
-  "/api/job-applications",
-  jobApplicationRoutes
-);
+app.use("/api/job-applications", jobApplicationRoutes);
 
-app.use(
-  "/api/projects",
-  projectRoutes
-);
+app.use("/api/projects", projectRoutes);
+
+app.use("/api/achievements", achievementRoutes);
+
+app.use("/api/social-links", socialLinkRoutes);
 
 app.get("/", (req, res) => {
   res.send("CareerVault Backend is Running");
@@ -53,5 +47,11 @@ app.listen(PORT, () => {
   );
   console.log(
     `Projects API: http://localhost:${PORT}/api/projects`
+  );
+  console.log(
+    `Achievements API: http://localhost:${PORT}/api/achievements`
+  );
+  console.log(
+    `Social Links API: http://localhost:${PORT}/api/social-links`
   );
 });

@@ -1,4 +1,5 @@
 import Projects from "./components/Projects/Projects";
+import Portfolio from "./components/Portfolio/Portfolio";
 import { useEffect, useState } from "react";
 import JobApplications from "./components/JobApplications/JobApplications";
 
@@ -166,6 +167,10 @@ function App() {
         Projects
       </button>
 
+      <button onClick={() => setPage("portfolio")}>
+        Portfolio
+      </button>
+
       <button onClick={() => setPage("resume")}>
         Resume
       </button>
@@ -328,6 +333,10 @@ function App() {
       )}
 
       {page === "projects" && <Projects />}
+
+      {page === "portfolio" && (
+        <Portfolio />
+      )}
 
       {page === "resume" && (
         <div>
