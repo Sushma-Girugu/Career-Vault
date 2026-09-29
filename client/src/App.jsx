@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Dashboard from "./components/Dashboard/Dashboard";
 import JobTest from "./components/JobTest/JobTest";
+import Analytics from "./pages/Analytics";
+import NotificationPanel from "./components/NotificationPanel";
 function App() {
   const [page, setPage] = useState("home");
 
@@ -464,6 +466,16 @@ function App() {
         onClick={() => setPage("jobtest")}
       >
         Job Tests
+      </button>
+      <button
+        onClick={() => setPage("analytics")}
+      >
+        Analytics
+      </button>
+      <button
+        onClick={() => setPage("notifications")}
+      >
+        Notifications
       </button>
 
       <hr />
@@ -929,6 +941,12 @@ function App() {
       ================================================= */}
         {page === "jobtest" && (
           <JobTest />
+        )}
+        {page === "analytics" && (
+          <Analytics />
+        )}
+        {page === "notifications" && (
+          <NotificationPanel />
         )}
       
     </div>

@@ -12,8 +12,10 @@ const profileRoutes = require("./routes/profileRoutes");
 const skillRoutes = require("./routes/skillRoutes");
 const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
 const questionRoutes = require("./routes/questionRoutes");
+const analyticsRoutes = require("./routes/analytics");
+const notificationRoutes = require("./routes/notifications");
 // Models
-const Skill = require("./models/Skill");
+const Skill = require("./models/skill");
 
 const app = express();
 
@@ -67,6 +69,16 @@ app.use(
   "/api/questions", 
   questionRoutes
 );
+app.use(
+  "/api/analytics",
+  analyticsRoutes
+);
+
+app.use(
+  "/api/notifications",
+  notificationRoutes
+);
+
 
 // ==========================================
 // JOB APPLICATION TEST ROUTE
