@@ -1,37 +1,96 @@
 const express = require("express");
 const Profile = require("../models/Profile");
-
-console.log("PROFILE ROUTES FILE LOADED");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// ===============================
-// SAVE OR UPDATE PROFILE
-// ===============================
-router.post("/", async (req, res) => {
+// ========================================
+// GET LOGGED-IN USER PROFILE
+// GET /api/profile
+// ========================================
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const { name, email, college, branch, year } = req.body;
+    const profile = await Profile.findOne({
+      userId: req.user.userId
+    });
 
-    const savedProfile = await Profile.findOneAndUpdate(
-      { email: email },
+    if (!profile) {
+      return res.status(404).json({
+        message: "Profile not found"
+      });
+    }
+
+    res.status(200).json(profile);
+
+  } catch (error) {
+    console.error("Profile fetch error:", error.message);
+
+    res.status(500).json({
+      message: "Failed to fetch profile",
+      error: error.message
+    });
+  }
+});
+
+
+// ========================================
+// CREATE OR UPDATE LOGGED-IN USER PROFILE
+// POST /api/profile
+// ========================================
+router.post("/", authMiddleware, async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      phone,
+      college,
+      branch,
+      year,
+      location,
+      bio,
+      linkedin,
+      github,
+      portfolio
+    } = req.body;
+
+    // Required fields
+    if (!name || !email || !college || !branch || !year) {
+      return res.status(400).json({
+        message: "Name, email, college, branch and year are required"
+      });
+    }
+
+    const profile = await Profile.findOneAndUpdate(
       {
+        userId: req.user.userId
+      },
+      {
+        userId: req.user.userId,
         name,
         email,
+        phone,
         college,
         branch,
-        year
+        year,
+        location,
+        bio,
+        linkedin,
+        github,
+        portfolio
       },
       {
         new: true,
         upsert: true,
-        runValidators: true
+        runValidators: true,
+        setDefaultsOnInsert: true
       }
     );
 
     res.status(200).json({
       message: "Profile saved successfully",
-      profile: savedProfile
+      profile
     });
+
   } catch (error) {
     console.error("Profile save error:", error.message);
 
@@ -42,35 +101,16 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ===============================
-// GET ALL PROFILES
-// ===============================
-router.get("/", async (req, res) => {
+
+// ========================================
+// DELETE LOGGED-IN USER PROFILE
+// DELETE /api/profile
+// ========================================
+router.delete("/", authMiddleware, async (req, res) => {
   try {
-    const profiles = await Profile.find();
-
-    res.status(200).json(profiles);
-  } catch (error) {
-    console.error("Profile fetch error:", error.message);
-
-    res.status(500).json({
-      message: "Failed to fetch profiles",
-      error: error.message
+    const deletedProfile = await Profile.findOneAndDelete({
+      userId: req.user.userId
     });
-  }
-});
-
-// ===============================
-// DELETE PROFILE BY ID
-// ===============================
-router.delete("/:id", async (req, res) => {
-  try {
-    console.log("DELETE PROFILE REQUEST RECEIVED");
-    console.log("Profile ID:", req.params.id);
-
-    const deletedProfile = await Profile.findByIdAndDelete(
-      req.params.id
-    );
 
     if (!deletedProfile) {
       return res.status(404).json({
@@ -82,6 +122,7 @@ router.delete("/:id", async (req, res) => {
       message: "Profile deleted successfully",
       profile: deletedProfile
     });
+
   } catch (error) {
     console.error("Profile delete error:", error.message);
 
@@ -91,5 +132,6 @@ router.delete("/:id", async (req, res) => {
     });
   }
 });
+
 
 module.exports = router;
