@@ -1,37 +1,34 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 
+import JobApplications from "./components/JobApplications/JobApplications";
 import Projects from "./components/Projects/Projects";
 import JobTest from "./components/JobTest/JobTest";
+import Resume from "./components/Resume";
+
 import Auth from "./components/Auth/Auth";
 import Gemini from "./components/Gemini/Gemini";
-const API = "http://localhost:5000/api";
 
+const API = "http://localhost:5000/api";
 function App() {
-    const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("token")
+  // =====================================================
+  // AUTHENTICATION
+  // =====================================================
+
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    Boolean(localStorage.getItem("token"))
   );
 
-  const [currentUser, setCurrentUser] = useState(() => {
-    const savedUser = localStorage.getItem("user");
+  const [authMode, setAuthMode] = useState("login");
 
-    return savedUser
-      ? JSON.parse(savedUser)
-      : null;
+  const [authForm, setAuthForm] = useState({
+    name: "",
+    email: "",
+    password: ""
   });
 
-  const handleLogin = (user) => {
-    setCurrentUser(user);
-    setIsAuthenticated(true);
-  };
+  const [authLoading, setAuthLoading] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    setCurrentUser(null);
-    setIsAuthenticated(false);
-  };
   // =====================================================
   // NAVIGATION
   // =====================================================
@@ -68,6 +65,7 @@ function App() {
   });
 
   const [profileLoading, setProfileLoading] = useState(false);
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -134,16 +132,24 @@ function App() {
   // PROFILE CHANGE
   // =====================================================
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const getToken = () => {
+    return localStorage.getItem("token");
+  };
 
-    setProfile((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+  const authHeaders = () => {
+    const token = getToken();
 
-    setError("");
+    return token
+      ? {
+          Authorization: `Bearer ${token}`
+        }
+      : {};
+  };
+
+  const handleNavigation = (page) => {
+    setActivePage(page);
     setMessage("");
+    setError("");
   };
 
   // =====================================================
@@ -166,13 +172,15 @@ function App() {
     ];
 
     const completed = fields.filter(
-      (field) => field && field.toString().trim() !== ""
+      (field) =>
+        field &&
+        field.toString().trim() !== ""
     ).length;
 
     const percentage = Math.round((completed / fields.length) * 100);
 
-    setStats((prev) => ({
-      ...prev,
+    setStats((previous) => ({
+      ...previous,
       profile: percentage
     }));
 
@@ -180,41 +188,367 @@ function App() {
   };
 
   // =====================================================
-  // VALIDATE PROFILE
+  // AUTH FORM
+  // =====================================================
+
+  const handleAuthChange = (e) => {
+    setAuthForm({
+      ...authForm,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // =====================================================
+  // LOGIN
+  // =====================================================
+
+  const login = async () => {
+    if (
+      !authForm.email.trim() ||
+      !authForm.password
+    ) {
+      alert(
+        "Please enter email and password."
+      );
+      return;
+    }
+
+    try {
+      setAuthLoading(true);
+
+      const response = await fetch(
+        `${API}/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: authForm.email
+              .trim()
+              .toLowerCase(),
+            password: authForm.password
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(
+          data.message ||
+            "Login failed."
+        );
+        return;
+      }
+
+      if (data.token) {
+        localStorage.setItem(
+          "token",
+          data.token
+        );
+      }
+
+      if (data.user) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
+      }
+
+      setIsAuthenticated(true);
+
+      setAuthForm({
+        name: "",
+        email: "",
+        password: ""
+      });
+
+      setActivePage("Dashboard");
+
+      await loadProfile();
+      await loadSkills();
+      await loadApplications();
+      await loadProjects();
+
+      alert("Login successful!");
+    } catch (err) {
+      console.log(
+        "Login error:",
+        err
+      );
+
+      alert(
+        "Server connection failed."
+      );
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // =====================================================
+  // REGISTER
+  // =====================================================
+
+  const register = async () => {
+    if (
+      !authForm.name.trim() ||
+      !authForm.email.trim() ||
+      !authForm.password
+    ) {
+      alert(
+        "Name, email and password are required."
+      );
+      return;
+    }
+
+    if (authForm.password.length < 6) {
+      alert(
+        "Password must contain at least 6 characters."
+      );
+      return;
+    }
+
+    try {
+      setAuthLoading(true);
+
+      const response = await fetch(
+        `${API}/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name: authForm.name.trim(),
+            email: authForm.email
+              .trim()
+              .toLowerCase(),
+            password: authForm.password
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(
+          data.message ||
+            "Registration failed."
+        );
+        return;
+      }
+
+      alert(
+        "Registration successful! Please login."
+      );
+
+      setAuthMode("login");
+
+      setAuthForm({
+        name: "",
+        email: authForm.email
+          .trim()
+          .toLowerCase(),
+        password: ""
+      });
+    } catch (err) {
+      console.log(
+        "Registration error:",
+        err
+      );
+
+      alert(
+        "Server connection failed."
+      );
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // =====================================================
+  // LOGOUT
+  // =====================================================
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    setIsAuthenticated(false);
+
+    setProfile({
+      name: "",
+      email: "",
+      college: "",
+      branch: "",
+      year: "",
+      phone: "",
+      location: "",
+      linkedin: "",
+      github: "",
+      portfolio: "",
+      bio: ""
+    });
+
+    setSkills([]);
+    setApplications([]);
+
+    setActivePage("Dashboard");
+
+    alert("Logged out successfully.");
+  };
+
+  // =====================================================
+  // PROFILE INPUT
+  // =====================================================
+
+  const handleProfileChange = (e) => {
+    const {
+      name,
+      value
+    } = e.target;
+
+    setProfile((previous) => ({
+      ...previous,
+      [name]: value
+    }));
+
+    setError("");
+    setMessage("");
+  };
+
+  // =====================================================
+  // LOAD PROFILE
+  // =====================================================
+
+  async function loadProfile() {
+    const token = getToken();
+
+    if (!token) {
+      return;
+    }
+
+    try {
+      setProfileLoading(true);
+
+      const response = await fetch(
+        `${API}/profile`,
+        {
+          method: "GET",
+          headers: {
+            ...authHeaders()
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.status === 401) {
+        logout();
+        return;
+      }
+
+      if (!response.ok) {
+        console.log(
+          "Profile loading failed:",
+          data
+        );
+        return;
+      }
+
+      let savedProfile = null;
+
+      if (
+        data &&
+        data.profile
+      ) {
+        savedProfile = data.profile;
+      } else if (
+        Array.isArray(data) &&
+        data.length > 0
+      ) {
+        savedProfile = data[0];
+      } else if (
+        data &&
+        !Array.isArray(data)
+      ) {
+        savedProfile = data;
+      }
+
+      if (savedProfile) {
+        setProfile((previous) => ({
+          ...previous,
+          ...savedProfile
+        }));
+
+        calculateProfileCompletion(
+          savedProfile
+        );
+      }
+    } catch (err) {
+      console.log(
+        "Profile loading error:",
+        err
+      );
+    } finally {
+      setProfileLoading(false);
+    }
+  }
+
+  // =====================================================
+  // PROFILE VALIDATION
   // =====================================================
 
   const validateProfile = () => {
     setError("");
 
     if (!profile.name.trim()) {
-      setError("Full name is required.");
+      setError(
+        "Full name is required."
+      );
       return false;
     }
 
-    if (profile.name.trim().length < 3) {
-      setError("Full name must contain at least 3 characters.");
+    if (
+      profile.name.trim().length < 3
+    ) {
+      setError(
+        "Full name must contain at least 3 characters."
+      );
       return false;
     }
 
     if (!profile.email.trim()) {
-      setError("Email address is required.");
+      setError(
+        "Email address is required."
+      );
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailRegex.test(profile.email.trim())) {
-      setError("Please enter a valid email address.");
+    if (
+      !emailRegex.test(
+        profile.email.trim()
+      )
+    ) {
+      setError(
+        "Please enter a valid email address."
+      );
       return false;
     }
 
     if (!profile.college.trim()) {
-      setError("College / University is required.");
+      setError(
+        "College / University is required."
+      );
       return false;
     }
 
     if (!profile.branch.trim()) {
-      setError("Branch / Course is required.");
+      setError(
+        "Branch / Course is required."
+      );
       return false;
     }
 
@@ -261,22 +595,17 @@ function App() {
 
   const loadProfile = async () => {
     try {
-      setProfileLoading(true);
-      setError("");
+      const response = await fetch(
+        `${API}/skills`,
+        {
+          headers: {
+            ...authHeaders()
+          }
+        }
+      );
 
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.log("No login token found.");
-        return;
-      }
-
-      const response = await fetch(`${API}/profile`, {
-        method: "GET",
-        headers: getHeaders()
-      });
-
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (response.status === 404) {
   console.log("No profile created yet.");
@@ -509,10 +838,52 @@ function App() {
   };
 
   // =====================================================
+  // LOAD PROJECTS
+  // =====================================================
+
+  async function loadProjects() {
+    try {
+      const response = await fetch(
+        `${API}/projects`,
+        {
+          headers: {
+            ...authHeaders()
+          }
+        }
+      );
+
+      const data =
+        await response.json();
+
+      if (response.ok) {
+        const projectList =
+          Array.isArray(data)
+            ? data
+            : data.projects || [];
+
+        setProjectCount(
+          projectList.length
+        );
+
+        setStats((previous) => ({
+          ...previous,
+          projects:
+            projectList.length
+        }));
+      }
+    } catch (err) {
+      console.log(
+        "Projects fetch error:",
+        err
+      );
+    }
+  }
+
+  // =====================================================
   // LOAD JOB APPLICATIONS
   // =====================================================
 
-  const loadApplications = async () => {
+  async function loadApplications() {
     try {
       const token = localStorage.getItem("token");
 
@@ -524,62 +895,96 @@ function App() {
       const response = await fetch(
         `${API}/job-applications`,
         {
-          method: "GET",
-          headers: getHeaders()
+          headers: {
+            ...authHeaders()
+          }
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to load applications"
+      if (response.ok) {
+        const applicationList =
+          Array.isArray(data)
+            ? data
+            : data.applications || [];
+
+        setApplications(
+          applicationList
+        );
+
+        setStats((previous) => ({
+          ...previous,
+          applications:
+            applicationList.length
+        }));
+      } else {
+        console.log(
+          "Failed to load applications:",
+          data
         );
       }
-
-      setApplications(Array.isArray(data) ? data : []);
-
-      setStats((prev) => ({
-        ...prev,
-        applications: Array.isArray(data) ? data.length : 0
-      }));
     } catch (err) {
-      console.error(
+      console.log(
         "Job applications fetch error:",
         err
       );
     }
+  }
+
+  // =====================================================
+  // APPLICATION FORM
+  // =====================================================
+
+  const handleApplicationChange = (
+    e
+  ) => {
+    setApplicationForm({
+      ...applicationForm,
+      [e.target.name]:
+        e.target.value
+    });
   };
 
   // =====================================================
-  // APPLICATION FORM CHANGE
+  // CLEAR APPLICATION FORM
   // =====================================================
 
-  const handleApplicationChange = (e) => {
-    const { name, value } = e.target;
+  const clearApplicationForm = () => {
+    setApplicationForm({
+      company: "",
+      role: "",
+      status: "Applied",
+      appliedDate: "",
+      jobLink: ""
+    });
 
-    setApplicationForm((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+    setEditingApplicationId(
+      null
+    );
   };
 
   // =====================================================
   // SAVE APPLICATION
   // =====================================================
 
-  const saveApplication = async (e) => {
-    if (e) {
-      e.preventDefault();
-    }
-
-    if (!applicationForm.company.trim()) {
-      alert("Please enter company name.");
+  const saveApplication = async () => {
+    if (
+      !applicationForm.company.trim()
+    ) {
+      alert(
+        "Please enter company name."
+      );
       return;
     }
 
-    if (!applicationForm.jobTitle.trim()) {
-      alert("Please enter job role.");
+    if (
+      !applicationForm.role.trim()
+    ) {
+      alert(
+        "Please enter job role."
+      );
       return;
     }
 
@@ -598,8 +1003,14 @@ function App() {
           `${API}/job-applications/${editingApplicationId}`,
           {
             method: "PUT",
-            headers: getHeaders(),
-            body: JSON.stringify(applicationForm)
+            headers: {
+              "Content-Type":
+                "application/json",
+              ...authHeaders()
+            },
+            body: JSON.stringify(
+              applicationForm
+            )
           }
         );
       } else {
@@ -607,13 +1018,20 @@ function App() {
           `${API}/job-applications`,
           {
             method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify(applicationForm)
+            headers: {
+              "Content-Type":
+                "application/json",
+              ...authHeaders()
+            },
+            body: JSON.stringify(
+              applicationForm
+            )
           }
         );
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -645,20 +1063,35 @@ function App() {
   // EDIT APPLICATION
   // =====================================================
 
-  const editApplication = (application) => {
+  const editApplication = (
+    application
+  ) => {
     setApplicationForm({
-      company: application.company || "",
-      jobTitle: application.jobTitle || "",
-      status: application.status || "Applied",
-      appliedDate: application.applicationDate
-        ? application.applicationDate.substring(0, 10)
-        : "",
-      jobLink: application.jobLink || ""
+      company:
+        application.company || "",
+      role:
+        application.role || "",
+      status:
+        application.status ||
+        "Applied",
+      appliedDate:
+        application.appliedDate
+          ? application.appliedDate.substring(
+              0,
+              10
+            )
+          : "",
+      jobLink:
+        application.jobLink || ""
     });
 
     setEditingApplicationId(application._id);
 
     setActivePage("Job Applications");
+
+    setActivePage(
+      "Job Applications"
+    );
 
     window.scrollTo({
       top: 0,
@@ -670,10 +1103,13 @@ function App() {
   // DELETE APPLICATION
   // =====================================================
 
-  const deleteApplication = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this job application?"
-    );
+  const deleteApplication = async (
+    id
+  ) => {
+    const confirmDelete =
+      window.confirm(
+        "Are you sure you want to delete this job application?"
+      );
 
     if (!confirmDelete) {
       return;
@@ -691,11 +1127,14 @@ function App() {
         `${API}/job-applications/${id}`,
         {
           method: "DELETE",
-          headers: getHeaders()
+          headers: {
+            ...authHeaders()
+          }
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -713,61 +1152,39 @@ function App() {
       );
 
       alert(
-        err.message || "Server connection failed."
+        "Job application deleted successfully!"
+      );
+    } catch (err) {
+      console.log(
+        "Application delete error:",
+        err
+      );
+
+      alert(
+        "Server connection failed."
       );
     }
   };
 
   // =====================================================
-  // CLEAR APPLICATION FORM
+  // INITIAL DATA LOAD
   // =====================================================
 
-  const clearApplicationForm = () => {
-    setApplicationForm({
-      company: "",
-      jobTitle: "",
-      status: "Applied",
-      applicationDate: "",
-      jobLink: ""
-    });
+useEffect(() => {
+  const token = getToken();
 
-    setEditingApplicationId(null);
-  };
-
-  // =====================================================
-  // LOAD DATA WHEN APP STARTS
-  // =====================================================
-
- useEffect(() => {
-  if (!isAuthenticated) {
-    const emptyProfile = {
-      name: "",
-      email: "",
-      college: "",
-      branch: "",
-      year: "",
-      phone: "",
-      location: "",
-      linkedin: "",
-      github: "",
-      portfolio: "",
-      bio: ""
-    };
-
-    setProfile(emptyProfile);
-    setSkills([]);
-    setApplications([]);
-
+  if (!token) {
     return;
   }
 
   loadProfile();
   loadSkills();
   loadApplications();
-}, [isAuthenticated]);
-
+  loadProjects();
+}, []);
   // =====================================================
   // RENDER
+  // AUTH SCREEN
   // =====================================================
     if (!isAuthenticated) {
     return (
@@ -848,7 +1265,6 @@ function App() {
 
             <button
               type="button"
-              className="avatar"
               onClick={() =>
                 handleNavigation("Profile")
               }
@@ -902,44 +1318,47 @@ function App() {
                   YOUR CAREER JOURNEY
                 </span>
 
-                <h2>
-                  Build your future with CareerVault.
-                </h2>
+            <h2>
+              Build your future with
+              CareerVault.
+            </h2>
 
-                <p>
-                  Keep your profile, skills,
-                  projects, applications and
-                  resume organized in one place.
-                </p>
+            <p>
+              Keep your profile,
+              skills, projects,
+              applications and resume
+              organized in one place.
+            </p>
 
-                <button
-                  type="button"
-                  className="primary-btn"
-                  onClick={() =>
-                    handleNavigation("Profile")
-                  }
-                >
-                  Complete Profile →
-                </button>
-              </div>
+            <button
+              type="button"
+              className="primary-btn"
+              onClick={() =>
+                handleNavigation(
+                  "Profile"
+                )
+              }
+            >
+              Complete Profile →
+            </button>
+          </div>
 
-              <div className="welcome-circle">
-                <span>
-                  {stats.profile}%
-                </span>
+          <div className="welcome-circle">
+            <span>
+              {stats.profile}%
+            </span>
 
-                <small>
-                  Profile
-                </small>
-              </div>
+            <small>
+              Profile
+            </small>
+          </div>
+        </div>
 
-            </div>
-
-            <div className="section-heading">
-              <div>
-                <h2>
-                  Career Overview
-                </h2>
+        <div className="section-heading">
+          <div>
+            <h2>
+              Career Overview
+            </h2>
 
                 <p>
                   Your current career progress
@@ -954,14 +1373,14 @@ function App() {
                   ◉
                 </div>
 
-                <div>
-                  <span>
-                    Profile
-                  </span>
+            <div>
+              <span>
+                Profile
+              </span>
 
-                  <strong>
-                    {stats.profile}%
-                  </strong>
+              <strong>
+                {stats.profile}%
+              </strong>
 
                   <small>
                     Completion
@@ -969,422 +1388,339 @@ function App() {
                 </div>
               </div>
 
-              <div className="stat-card">
-                <div className="stat-icon blue">
-                  ◆
-                </div>
-
-                <div>
-                  <span>
-                    Skills
-                  </span>
-
-                  <strong>
-                    {stats.skills}
-                  </strong>
-
-                  <small>
-                    Skills added
-                  </small>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon green">
-                  ▣
-                </div>
-
-                <div>
-                  <span>
-                    Projects
-                  </span>
-
-                  <strong>
-                    {stats.projects}
-                  </strong>
-
-                  <small>
-                    Projects added
-                  </small>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon orange">
-                  ▤
-                </div>
-
-                <div>
-                  <span>
-                    Applications
-                  </span>
-
-                  <strong>
-                    {stats.applications}
-                  </strong>
-
-                  <small>
-                    Job applications
-                  </small>
-                </div>
-              </div>
-
+          <div className="stat-card">
+            <div className="stat-icon blue">
+              ◆
             </div>
 
-            <div className="dashboard-grid">
+            <div>
+              <span>
+                Skills
+              </span>
 
-              {/* PROFILE PROGRESS */}
+              <strong>
+                {stats.skills}
+              </strong>
 
-              <div className="panel">
+              <small>
+                Skills added
+              </small>
+            </div>
+          </div>
 
-                <div className="panel-header">
-
-                  <div>
-                    <h3>
-                      Profile Progress
-                    </h3>
-
-                    <p>
-                      Complete your profile
-                      to stand out.
-                    </p>
-                  </div>
-
-                  <strong>
-                    {stats.profile}%
-                  </strong>
-
-                </div>
-
-                <div className="progress">
-
-                  <div
-                    style={{
-                      width: `${stats.profile}%`
-                    }}
-                  />
-
-                </div>
-
-                <div className="progress-items">
-
-                  <span>
-                    {profile.name &&
-                    profile.email
-                      ? "✓"
-                      : "○"}{" "}
-                    Basic information
-                  </span>
-
-                  <span>
-                    {profile.college &&
-                    profile.branch
-                      ? "✓"
-                      : "○"}{" "}
-                    Education
-                  </span>
-
-                  <span>
-                    {profile.linkedin ||
-                    profile.github
-                      ? "✓"
-                      : "○"}{" "}
-                    Professional links
-                  </span>
-
-                  <span>
-                    {profile.bio
-                      ? "✓"
-                      : "○"}{" "}
-                    Bio
-                  </span>
-
-                </div>
-
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={() =>
-                    handleNavigation("Profile")
-                  }
-                >
-                  Update Profile
-                </button>
-
-              </div>
-
-              {/* QUICK ACTIONS */}
-
-              <div className="panel">
-
-                <div className="panel-header">
-
-                  <div>
-                    <h3>
-                      Quick Actions
-                    </h3>
-
-                    <p>
-                      Manage your career faster.
-                    </p>
-                  </div>
-
-                </div>
-
-                <button
-                  type="button"
-                  className="action-btn"
-                  onClick={() =>
-                    handleNavigation("Profile")
-                  }
-                >
-                  <span>👤</span>
-                  Update Profile
-                  <b>→</b>
-                </button>
-
-                <button
-                  type="button"
-                  className="action-btn"
-                  onClick={() =>
-                    handleNavigation("Skills")
-                  }
-                >
-                  <span>◆</span>
-                  Add Skill
-                  <b>→</b>
-                </button>
-
-                <button
-                  type="button"
-                  className="action-btn"
-                  onClick={() =>
-                    handleNavigation("Projects")
-                  }
-                >
-                  <span>💼</span>
-                  Add Project
-                  <b>→</b>
-                </button>
-
-                <button
-                  type="button"
-                  className="action-btn"
-                  onClick={() =>
-                    handleNavigation("Resume")
-                  }
-                >
-                  <span>📄</span>
-                  Resume
-                  <b>→</b>
-                </button>
-
-                <button
-                  type="button"
-                  className="action-btn"
-                  onClick={() =>
-                    handleNavigation("Job Test")
-                  }
-                >
-                  <span>✓</span>
-                  Job Tests
-                  <b>→</b>
-                </button>
-
-              </div>
-
+          <div className="stat-card">
+            <div className="stat-icon green">
+              ▣
             </div>
 
-          </section>
-        )}
+            <div>
+              <span>
+                Projects
+              </span>
 
-        {/* =================================================
-            PROFILE
-        ================================================= */}
+              <strong>
+                {stats.projects}
+              </strong>
 
-        {activePage === "Profile" && (
-          <section className="profile-page">
+              <small>
+                Projects added
+              </small>
+            </div>
+          </div>
 
-            <div className="profile-header-card">
+          <div className="stat-card">
+            <div className="stat-icon orange">
+              ▤
+            </div>
 
-              <div className="profile-avatar">
-                {profile.name
-                  ? profile.name
-                      .charAt(0)
-                      .toUpperCase()
-                  : "U"}
-              </div>
+            <div>
+              <span>
+                Applications
+              </span>
 
+              <strong>
+                {stats.applications}
+              </strong>
+
+              <small>
+                Job applications
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div className="dashboard-grid">
+          <div className="panel">
+            <div className="panel-header">
               <div>
-
-                <h2>
-                  {profile.name ||
-                    "Your Name"}
-                </h2>
+                <h3>
+                  Profile Progress
+                </h3>
 
                 <p>
-                  {profile.branch ||
-                    "Student"}
-
-                  {profile.college
-                    ? ` • ${profile.college}`
-                    : ""}
+                  Complete your profile
+                  to stand out.
                 </p>
-
-                <span className="profile-status">
-                  ● Profile
-                </span>
-
               </div>
 
+              <strong>
+                {stats.profile}%
+              </strong>
             </div>
 
-            <form
-              className="profile-form"
-              onSubmit={saveProfile}
+            <div className="progress">
+              <div
+                style={{
+                  width: `${stats.profile}%`
+                }}
+              />
+            </div>
+
+            <div className="progress-items">
+              <span>
+                {profile.name &&
+                profile.email
+                  ? "✓"
+                  : "○"}{" "}
+                Basic information
+              </span>
+
+              <span>
+                {profile.college &&
+                profile.branch
+                  ? "✓"
+                  : "○"}{" "}
+                Education
+              </span>
+
+              <span>
+                {profile.linkedin ||
+                profile.github
+                  ? "✓"
+                  : "○"}{" "}
+                Professional links
+              </span>
+
+              <span>
+                {profile.bio
+                  ? "✓"
+                  : "○"}{" "}
+                Bio
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() =>
+                handleNavigation(
+                  "Profile"
+                )
+              }
             >
+              Update Profile
+            </button>
+          </div>
 
-              {/* PERSONAL */}
+          <div className="panel">
+            <div className="panel-header">
+              <div>
+                <h3>
+                  Quick Actions
+                </h3>
 
-              <div className="form-section">
-
-                <div className="form-title">
-
-                  <h3>
-                    Personal Information
-                  </h3>
-
-                  <p>
-                    Tell us about yourself.
-                  </p>
-
-                </div>
-
-                <div className="form-grid">
-
-                  <div className="field">
-
-                    <label>
-                      Full Name *
-                    </label>
-
-                    <input
-                      type="text"
-                      name="name"
-                      value={profile.name}
-                      onChange={handleChange}
-                      placeholder="Enter your full name"
-                    />
-
-                  </div>
-
-                  <div className="field">
-
-                    <label>
-                      Email *
-                    </label>
-
-                    <input
-                      type="email"
-                      name="email"
-                      value={profile.email}
-                      onChange={handleChange}
-                      placeholder="you@example.com"
-                    />
-
-                  </div>
-
-                  <div className="field">
-
-                    <label>
-                      Phone
-                    </label>
-
-                    <input
-                      type="text"
-                      name="phone"
-                      value={profile.phone}
-                      onChange={handleChange}
-                      placeholder="10 digit phone number"
-                    />
-
-                  </div>
-
-                  <div className="field">
-
-                    <label>
-                      Location
-                    </label>
-
-                    <input
-                      type="text"
-                      name="location"
-                      value={profile.location}
-                      onChange={handleChange}
-                      placeholder="City, State"
-                    />
-
-                  </div>
-
-                </div>
-
+                <p>
+                  Manage your career
+                  faster.
+                </p>
               </div>
+            </div>
 
-              {/* EDUCATION */}
+            <button
+              type="button"
+              className="quick-action"
+              onClick={() =>
+                handleNavigation(
+                  "Profile"
+                )
+              }
+            >
+              <span>👤</span>
+              Edit Profile
+              <b>→</b>
+            </button>
 
-              <div className="form-section">
+            <button
+              type="button"
+              className="quick-action"
+              onClick={() =>
+                handleNavigation(
+                  "Skills"
+                )
+              }
+            >
+              <span>◆</span>
+              Add Skill
+              <b>→</b>
+            </button>
 
-                <div className="form-title">
+            <button
+              type="button"
+              className="quick-action"
+              onClick={() =>
+                handleNavigation(
+                  "Job Applications"
+                )
+              }
+            >
+              <span>▤</span>
+              Add Application
+              <b>→</b>
+            </button>
 
-                  <h3>
-                    Education
-                  </h3>
+            <button
+              type="button"
+              className="quick-action"
+              onClick={() =>
+                handleNavigation(
+                  "Resume"
+                )
+              }
+            >
+              <span>▥</span>
+              View Resume
+              <b>→</b>
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  };
 
-                  <p>
-                    Add your academic information.
-                  </p>
+  // =====================================================
+  // PROFILE
+  // =====================================================
 
-                </div>
+  const renderProfile = () => {
+    return (
+      <section>
+        <div className="section-heading">
+          <div>
+            <h2>
+              My Profile
+            </h2>
 
-                <div className="form-grid">
+            <p>
+              Keep your professional
+              information updated.
+            </p>
+          </div>
+        </div>
 
-                  <div className="field">
+        {message && (
+          <div
+            style={{
+              padding: "12px",
+              marginBottom: "15px"
+            }}
+          >
+            {message}
+          </div>
+        )}
 
-                    <label>
-                      College / University *
-                    </label>
+        {error && (
+          <div
+            style={{
+              padding: "12px",
+              marginBottom: "15px"
+            }}
+          >
+            {error}
+          </div>
+        )}
 
-                    <input
-                      type="text"
-                      name="college"
-                      value={profile.college}
-                      onChange={handleChange}
-                      placeholder="College / University"
-                    />
+        <div className="form-section">
+          <div className="form-title">
+            <h3>
+              Personal Information
+            </h3>
 
-                  </div>
+            <p>
+              Tell us about yourself.
+            </p>
+          </div>
 
-                  <div className="field">
+          <div className="form-grid">
+            <div className="field">
+              <label>
+                Full Name *
+              </label>
 
-                    <label>
-                      Branch / Course *
-                    </label>
+              <input
+                type="text"
+                name="name"
+                value={
+                  profile.name
+                }
+                onChange={
+                  handleProfileChange
+                }
+                placeholder="Enter your full name"
+              />
+            </div>
 
-                    <input
-                      type="text"
-                      name="branch"
-                      value={profile.branch}
-                      onChange={handleChange}
-                      placeholder="Computer Science"
-                    />
+            <div className="field">
+              <label>
+                Email *
+              </label>
 
-                  </div>
+              <input
+                type="email"
+                name="email"
+                value={
+                  profile.email
+                }
+                onChange={
+                  handleProfileChange
+                }
+                placeholder="you@example.com"
+              />
+            </div>
 
-                  <div className="field">
+            <div className="field">
+              <label>
+                College / University *
+              </label>
 
-                    <label>
-                      Graduation Year
-                    </label>
+              <input
+                type="text"
+                name="college"
+                value={
+                  profile.college
+                }
+                onChange={
+                  handleProfileChange
+                }
+                placeholder="College / University"
+              />
+            </div>
+
+            <div className="field">
+              <label>
+                Branch / Course *
+              </label>
+
+          
+          <input
+            type="text"
+            name="branch"
+            placeholder="Branch"
+            value={profile.branch}
+            onChange={handleChange}
+          />
+
+          <br />
+          <br />
 
                     <input
                       type="text"
@@ -1540,22 +1876,23 @@ function App() {
                   Skills
                 </h2>
 
-                <p>
-                  Add and manage your technical skills.
-                </p>
-              </div>
+            <p>
+              Add and manage your
+              technical skills.
+            </p>
+          </div>
+        </div>
 
-            </div>
+        <div className="panel">
+          <h3>
+            Add New Skill
+          </h3>
 
-            <div className="panel">
-
-              <form onSubmit={addSkill}>
-
-                <div className="field">
-
-                  <label>
-                    Skill Name
-                  </label>
+          <div className="form-grid">
+            <div className="field">
+              <label>
+                Skill Name
+              </label>
 
                   <input
                     type="text"
@@ -1574,19 +1911,23 @@ function App() {
                     Skill Level
                   </label>
 
-                  <select
-                    value={skillLevel}
-                    onChange={(e) =>
-                      setSkillLevel(e.target.value)
-                    }
-                  >
-                    <option value="Beginner">
-                      Beginner
-                    </option>
+                      <select
+                        value={
+                  skillLevel
+                }
+                        onChange={(e) =>
+                          setSkillLevel(
+                    e.target.value
+                  )
+                        }
+                      >
+                        <option value="Beginner">
+                          Beginner
+                        </option>
 
-                    <option value="Intermediate">
-                      Intermediate
-                    </option>
+                        <option value="Intermediate">
+                          Intermediate
+                        </option>
 
                     <option value="Advanced">
                       Advanced
@@ -1633,15 +1974,35 @@ function App() {
                   No skills added yet.
                 </p>
               ) : (
-                <ul className="skills-list">
+                <div className="skills-list">
 
-                  {skills.map((skill) => (
-                    <li key={skill._id}>
-
+                  {skills.map(
+                (skill) => (
+                      <div
+                    key={
+                      skill._id
+                    }
+                    style={{
+                      display:
+                        "flex",
+                      justifyContent:
+                        "space-between",
+                      alignItems:
+                        "center",
+                      padding:
+                        "12px 0",
+                      borderBottom:
+                        "1px solid #eee"
+                    }}
+                  >
+                    <div>
+    
                       <div>
                         <strong>
-                          {skill.name}
-                        </strong>
+                              {
+                          skill.name
+                        }
+                            </strong>
 
                         <span>
                           {" - "}
@@ -1762,78 +2123,72 @@ function App() {
                     Job Role
                   </label>
 
-                  <input
-                    type="text"
-                    name="jobTitle"
-                    placeholder="Job Title"
-                    value={
-                      applicationForm.jobTitle
-                    }
-                    onChange={
-                      handleApplicationChange
-                    }
-                  />
+                <input
+                  type="text"
+                  name="role"
+                  value={
+                    applicationForm.role
+                  }
+                  onChange={
+                    handleApplicationChange
+                  }
+                  placeholder="Software Engineer"
+                />
+              </div>
 
-                </div>
+              <div className="field">
+                <label>
+                  Status
+                </label>
 
-                <div className="field">
+                        <select
+                          name="status"
+                          value={
+                            applicationForm.status
+                          }
+                          onChange={
+                            handleApplicationChange
+                          }
+                        >
+                          <option value="Applied">
+                            Applied
+                          </option>
 
-                  <label>
-                    Status
-                  </label>
+                          <option value="Interview">
+                            Interview
+                          </option>
 
-                  <select
-                    name="status"
-                    value={
-                      applicationForm.status
-                    }
-                    onChange={
-                      handleApplicationChange
-                    }
-                  >
-                    <option value="Applied">
-                      Applied
-                    </option>
+                          <option value="Selected">
+                            Selected
+                          </option>
 
-                    <option value="Interview">
-                      Interview
-                    </option>
+                  <option value="Rejected">
+                    Rejected
+                  </option>
+                </select>
+              </div>
 
-                    <option value="Selected">
-                      Selected
-                    </option>
+              <div className="field">
+                <label>
+                  Applied Date
+                </label>
 
-                    <option value="Rejected">
-                      Rejected
-                    </option>
-                  </select>
+                <input
+                  type="date"
+                  name="appliedDate"
+                  value={
+                    applicationForm.appliedDate
+                  }
+                  onChange={
+                    handleApplicationChange
+                  }
+                />
+              </div>
 
-                </div>
-
-                <div className="field">
-
-                  <label>
-                    Applied Date
-                  </label>
-
-                  <input
-                    type="date"
-                    name="applicationDate"
-                    value={
-                      applicationForm.applicationDate
-                    }
-                    onChange={
-                      handleApplicationChange
-                    }
-                  />
-
-                </div>
-
-                <div className="field">
-
-                  <label>
-                    Job Link
-                  </label>
+              <div className="field full-width">
+                <label>
+                  Job Link
+                </label>
 
                   <input
                     type="url"
@@ -1921,21 +2276,19 @@ function App() {
                               : "N/A"}
                           </p>
 
-                          {application.jobLink && (
-                            <a
-                              href={
-                                application.jobLink
-                              }
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Job Link
-                            </a>
-                          )}
-
-                        </div>
-
-                        <div>
+                      {application.jobLink && (
+                        <p>
+                          <a
+                            href={
+                              application.jobLink
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View Job
+                          </a>
+                        </p>
+                      )}
 
                           <button
                             type="button"
@@ -1948,81 +2301,230 @@ function App() {
                             Edit
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              deleteApplication(
-                                application._id
-                              )
-                            }
-                          >
-                            Delete
-                          </button>
-
-                        </div>
-
-                      </li>
-                    )
-                  )}
-
-                </ul>
-              )}
-
-            </div>
-
-          </section>
-        )}
-
-        {/* =================================================
-            JOB TEST
-        ================================================= */}
-
-        {activePage === "Job Test" && (
-          <section>
-
-            <JobTest />
-
-          </section>
-        )}
-
-        {/* =================================================
-            RESUME
-        ================================================= */}
-
-        {activePage === "Resume" && (
-          <section>
-
-            <div className="section-heading">
-
-              <div>
-                <h2>
-                  Resume
-                </h2>
-
-                <p>
-                  Manage your resume.
-                </p>
+                      <button
+                        type="button"
+                        style={{
+                          marginLeft:
+                            "10px"
+                        }}
+                        onClick={() =>
+                          deleteApplication(
+                            application._id
+                          )
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )
+                )}
               </div>
+            )}
+          </div>
+        </section>
+      );
+    };
 
+  // =====================================================
+  // RENDER
+  // =====================================================
+
+  return (
+    <div className="app">
+
+      {/* =================================================
+          SIDEBAR
+      ================================================= */}
+
+      <aside className="sidebar">
+
+        <div className="brand">
+          <div className="brand-logo">
+            CV
+          </div>
+
+          <div>
+            <h2>
+              CareerVault
+            </h2>
+
+            <span>
+              Career Management
+            </span>
+          </div>
+        </div>
+
+        <div className="menu-title">
+          MAIN MENU
+        </div>
+
+        <nav>
+          {navigation.map(
+            (item) => (
+              <button
+                type="button"
+                key={
+                  item.name
+                }
+                className={`nav-item ${
+                  activePage ===
+                  item.name
+                    ? "active"
+                    : ""
+                }`}
+                onClick={() =>
+                  handleNavigation(
+                    item.name
+                  )
+                }
+              >
+                <span className="nav-icon">
+                  {
+                    item.icon
+                  }
+                </span>
+
+                <span>
+                  {
+                    item.name
+                  }
+                </span>
+              </button>
+            )
+          )}
+        </nav>
+
+        <div className="sidebar-bottom">
+
+          <div className="help-box">
+            <div className="help-icon">
+              ?
             </div>
 
-            <div className="panel">
-
-              <h3>
-                Resume Module
-              </h3>
+            <div>
+              <strong>
+                Need help?
+              </strong>
 
               <p>
-                Your resume builder can be
-                connected here.
+                Build your career
+                profile.
               </p>
+            </div>
+          </div>
 
+          <button
+            type="button"
+            className="logout"
+            onClick={logout}
+          >
+            ↪ Sign Out
+          </button>
+
+        </div>
+
+      </aside>
+
+        {/* =================================================
+            MAIN
+        ================================================= */}
+
+      <main className="main">
+
+        {/* =================================================
+            TOPBAR
+        ================================================= */}
+
+        <header className="topbar">
+
+          <div>
+            <h1>
+              {activePage}
+            </h1>
+
+            <p>
+              {
+                getPageDescription()
+              }
+            </p>
+          </div>
+
+          <div className="user-area">
+
+            <div className="notification">
+              ♢
             </div>
 
+            {/* CLICKABLE PROFILE AVATAR */}
+
+            <button
+              type="button"
+              className="avatar"
+              onClick={() =>
+                handleNavigation(
+                  "Profile"
+                )
+              }
+              title="Open Profile"
+            >
+              {profile.name
+                ? profile.name
+                    .charAt(0)
+                    .toUpperCase()
+                : "U"}
+            </button>
+
+          </div>
+
+        </header>
+
+        {/* =================================================
+            PAGE CONTENT
+        ================================================= */}
+
+        {activePage ===
+          "Dashboard" &&
+          renderDashboard()}
+
+        {activePage ===
+          "Profile" &&
+          renderProfile()}
+
+        {activePage ===
+          "Skills" &&
+          renderSkills()}
+
+        {activePage ===
+          "Projects" && (
+          <section>
+            <Projects />
           </section>
         )}
 
-      </main>
+        {activePage ===
+          "Job Applications" &&
+          renderApplications()}
+
+        {activePage ===
+          "Job Test" && (
+          <section>
+            <JobTest />
+          </section>
+        )}
+
+        {activePage ===
+          "Resume" && (
+          <section>
+            <Resume
+              profile={
+                profile
+              }
+            />
+          </section>
+        )}
+
+
+      </main></main>
 
     </div>
   );
