@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./Projects.css";
+import ProjectCard from "./ProjectCard";
 
 const API_URL = "http://localhost:5000/api/projects";
 
@@ -10,14 +11,13 @@ function Projects() {
     description: "",
     technologies: "",
     githubUrl: "",
-    demoUrl: "",
+    demoUrl: ""
   });
 
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Fetch projects
   const fetchProjects = async () => {
     try {
       const response = await fetch(API_URL);
@@ -35,34 +35,18 @@ function Projects() {
   };
 
   useEffect(() => {
-  fetch(API_URL)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Failed to fetch projects");
-      }
+    fetchProjects();
+  }, []);
 
-      return response.json();
-    })
-    .then((data) => {
-      setProjects(data);
-    })
-    .catch((error) => {
-      console.error(error);
-      setMessage("Unable to load projects.");
-    });
-}, []);
-
-  // Handle input changes
   const handleChange = (event) => {
     const { name, value } = event.target;
 
     setForm((previous) => ({
       ...previous,
-      [name]: value,
+      [name]: value
     }));
   };
 
-  // Add / update project
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -82,7 +66,7 @@ function Projects() {
         .map((technology) => technology.trim())
         .filter(Boolean),
       githubUrl: form.githubUrl.trim(),
-      demoUrl: form.demoUrl.trim(),
+      demoUrl: form.demoUrl.trim()
     };
 
     try {
@@ -95,9 +79,9 @@ function Projects() {
       const response = await fetch(url, {
         method,
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(projectData),
+        body: JSON.stringify(projectData)
       });
 
       if (!response.ok) {
@@ -111,10 +95,11 @@ function Projects() {
         description: "",
         technologies: "",
         githubUrl: "",
-        demoUrl: "",
+        demoUrl: ""
       });
 
       setEditingId(null);
+
       setMessage(
         editingId
           ? "Project updated successfully."
@@ -128,21 +113,21 @@ function Projects() {
     }
   };
 
-  // Edit project
   const handleEdit = (project) => {
     setForm({
       name: project.name || "",
       description: project.description || "",
-      technologies: (project.technologies || []).join(", "),
+      technologies: Array.isArray(project.technologies)
+        ? project.technologies.join(", ")
+        : project.technologies || "",
       githubUrl: project.githubUrl || "",
-      demoUrl: project.demoUrl || "",
+      demoUrl: project.demoUrl || ""
     });
 
     setEditingId(project._id);
     setMessage("");
   };
 
-  // Delete project
   const handleDelete = async (id) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this project?"
@@ -154,7 +139,7 @@ function Projects() {
 
     try {
       const response = await fetch(`${API_URL}/${id}`, {
-        method: "DELETE",
+        method: "DELETE"
       });
 
       if (!response.ok) {
@@ -170,7 +155,7 @@ function Projects() {
           description: "",
           technologies: "",
           githubUrl: "",
-          demoUrl: "",
+          demoUrl: ""
         });
       }
 
@@ -181,7 +166,6 @@ function Projects() {
     }
   };
 
-  // Cancel editing
   const handleCancel = () => {
     setEditingId(null);
 
@@ -190,7 +174,7 @@ function Projects() {
       description: "",
       technologies: "",
       githubUrl: "",
-      demoUrl: "",
+      demoUrl: ""
     });
 
     setMessage("");
@@ -209,7 +193,6 @@ function Projects() {
       </div>
 
       <div className="projects-layout">
-        {/* Project form */}
         <div className="project-form-card">
           <h3>{editingId ? "Edit Project" : "Add Project"}</h3>
 
@@ -297,10 +280,11 @@ function Projects() {
             </div>
           </form>
 
-          {message && <p className="project-message">{message}</p>}
+          {message && (
+            <p className="project-message">{message}</p>
+          )}
         </div>
 
-        {/* Project list */}
         <div className="projects-list">
           <div className="projects-list-header">
             <h3>Your Projects</h3>
@@ -313,60 +297,16 @@ function Projects() {
               <p>Add your first project using the form.</p>
             </div>
           ) : (
-            projects.map((project) => (
-              <article className="project-card" key={project._id}>
-                <div className="project-card-content">
-                  <h4>{project.name}</h4>
-
-                  <p>{project.description}</p>
-
-                  {project.technologies?.length > 0 && (
-                    <div className="project-technologies">
-                      {project.technologies.map((technology, index) => (
-                        <span key={`${technology}-${index}`}>
-                          {technology}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="project-links">
-                    {project.githubUrl && (
-                      <a
-                        href={project.githubUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        GitHub
-                      </a>
-                    )}
-
-                    {project.demoUrl && (
-                      <a
-                        href={project.demoUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Live Demo
-                      </a>
-                    )}
-                  </div>
-                </div>
-
-                <div className="project-card-actions">
-                  <button onClick={() => handleEdit(project)}>
-                    Edit
-                  </button>
-
-                  <button
-                    className="delete-project-button"
-                    onClick={() => handleDelete(project._id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))
+            <div className="project-grid">
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project._id}
+                  project={project}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>

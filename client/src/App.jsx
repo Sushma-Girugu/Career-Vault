@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import Projects from "./components/Projects/Projects";
+import Portfolio from "./components/Portfolio/Portfolio";
 import "./App.css";
 
 import Projects from "./components/Projects/Projects";
@@ -70,6 +72,7 @@ function App() {
     { name: "Profile", icon: "◉" },
     { name: "Skills", icon: "◆" },
     { name: "Projects", icon: "▣" },
+    { name: "Portfolio", icon: "▤" },
     { name: "Job Applications", icon: "▤" },
     { name: "Job Test", icon: "✓" },
     { name: "Resume", icon: "▥" },
@@ -665,6 +668,10 @@ function App() {
 
     if (activePage === "Job Applications") {
       return "Track your job applications and their current status.";
+    }
+
+    if (activePage === "Portfolio") {
+      return "View and manage your professional portfolio.";
     }
 
     if (activePage === "Gemini AI") {
@@ -1317,6 +1324,7 @@ function App() {
           <div className="help-box">
             <div className="help-icon">?</div>
 
+
             <div>
               <strong>Need help?</strong>
               <p>Build your career profile.</p>
@@ -1375,6 +1383,12 @@ function App() {
         {activePage === "Projects" && (
           <section>
             <Projects />
+          </section>
+        )}
+
+        {activePage === "Portfolio" && (
+          <section>
+            <Portfolio />
           </section>
         )}
 
