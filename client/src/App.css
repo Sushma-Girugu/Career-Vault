@@ -672,6 +672,19 @@ button {
     gap: 25px;
   }
 }
+.cancel-btn {
+  background: #dc2626;
+  color: white;
+  border: 1px solid #dc2626;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background: #b91c1c;
+}
+
 /* =========================================
    MEMBER 1 - DASHBOARD / ACCOUNT UI
    ========================================= */
