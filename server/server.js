@@ -1,26 +1,24 @@
 require("dotenv").config();
 
 const express = require("express");
-const dotenv = require("dotenv");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
 const connectDB = require("./config/db");
-
-// Middleware
-const authMiddleware = require("./middleware/authMiddleware");
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const skillRoutes = require("./routes/skillRoutes");
 const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
-const questionRoutes = require("./routes/questionRoutes");const projectRoutes = require("./routes/projectRoutes");
+const questionRoutes = require("./routes/questionRoutes");
+const projectRoutes = require("./routes/projectRoutes");
 const geminiRoutes = require("./routes/geminiRoutes");
+const achievementRoutes = require("./routes/achievementRoutes");
+const socialLinkRoutes = require("./routes/socialLinkRoutes");
 
 // Models
 const Skill = require("./models/Skill");
-
 
 const app = express();
 
@@ -52,16 +50,27 @@ app.use("/api/profile", profileRoutes);
 
 // Skills
 app.use("/api/skills", skillRoutes);
+
+// Gemini AI
 app.use("/api/gemini", geminiRoutes);
+
 // Job Applications
 app.use(
-  "/api/job-applications",
-  jobApplicationRoutes
+    "/api/job-applications",
+    jobApplicationRoutes
 );
+
+// Interview / Questions
 app.use("/api/questions", questionRoutes);
 
+// Projects
 app.use("/api/projects", projectRoutes);
 
+// Achievements
+app.use("/api/achievements", achievementRoutes);
+
+// Social Links
+app.use("/api/social-links", socialLinkRoutes);
 
 // ==========================================
 // JOB APPLICATION TEST ROUTE
@@ -153,6 +162,14 @@ const startServer = async () => {
             );
 
             console.log(
+                `Achievements API: http://localhost:${PORT}/api/achievements`
+            );
+
+            console.log(
+                `Social Links API: http://localhost:${PORT}/api/social-links`
+            );
+
+            console.log(
                 `Job Test API: http://localhost:${PORT}/api/job-test`
             );
 
@@ -162,6 +179,10 @@ const startServer = async () => {
 
             console.log(
                 `Auth API: http://localhost:${PORT}/api/auth`
+            );
+
+            console.log(
+                `Gemini API: http://localhost:${PORT}/api/gemini`
             );
         });
 
