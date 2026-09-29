@@ -1,3 +1,8 @@
+const dns = require("dns");
+
+// Use Google DNS for MongoDB SRV lookup
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
 const mongoose = require("mongoose");
 
 const connectDB = async () => {
@@ -33,6 +38,7 @@ const connectDB = async () => {
       });
 
       return;
+
     } catch (error) {
       console.log(
         `MongoDB connection attempt ${attempt} failed:`,
