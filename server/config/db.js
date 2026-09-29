@@ -8,11 +8,10 @@ const connectDB = async () => {
       console.log(`MongoDB connection attempt ${attempt}/${maxRetries}...`);
 
       await mongoose.connect(process.env.MONGO_URI, {
-        family: 4,
-        serverSelectionTimeoutMS: 15000,
-        connectTimeoutMS: 15000,
-        socketTimeoutMS: 45000
-      });
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000,
+      socketTimeoutMS: 45000
+     });
 
       console.log("MongoDB Connected Successfully");
       console.log(

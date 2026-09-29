@@ -1,7 +1,8 @@
+import JobApplications from "./components/JobApplications";
 import { useEffect, useState } from "react";
 import "./App.css";
 
-const API = "http://localhost:5000/api";
+const API = "http://localhost:5001/api";
 
 function App() {
   const [activePage, setActivePage] = useState("Dashboard");
@@ -59,6 +60,43 @@ function App() {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  const loadApplicationCount = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(
+        `${API}/job-applications`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && Array.isArray(data)) {
+        setStats((prev) => ({
+          ...prev,
+          applications: data.length
+        }));
+      }
+    } catch (err) {
+      console.log(
+        "Application count error:",
+        err.message
+      );
+    }
+  };
+
+  useEffect(() => {
+    loadApplicationCount();
+  }, [activePage]);
 
   const loadProfile = async () => {
     try {
@@ -1135,12 +1173,21 @@ function App() {
 
         )}
 
-        {/* ======================================
+        {/*
+ ======================================
+    JOB APPLICATIONS
+====================================== */}
+
+{activePage === "Job Applications" && (
+  <JobApplications />
+)}
+{/* ======================================
             OTHER MODULES
         ====================================== */}
 
         {activePage !== "Dashboard" &&
-          activePage !== "Profile" && (
+  activePage !== "Profile" &&
+  activePage !== "Job Applications" && (
 
             <section className="coming-soon">
 
