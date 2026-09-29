@@ -1,22 +1,25 @@
 const express = require("express");
-const dotenv = require("dotenv");
 const cors = require("cors");
+const dotenv = require("dotenv");
 const mongoose = require("mongoose");
+const path = require("path");
 
 const connectDB = require("./config/db");
 
 // Middleware
 const authMiddleware = require("./middleware/authMiddleware");
 
+// Models
+const Skill = require("./models/Skill");
+
 // Routes
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const skillRoutes = require("./routes/skillRoutes");
-const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
 const projectRoutes = require("./routes/projectRoutes");
-
-// Models
-const Skill = require("./models/Skill");
+const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
+const resumeRoutes = require("./routes/resumeRoutes");
+const documentRoutes = require("./routes/documentRoutes");
 
 dotenv.config();
 
@@ -34,8 +37,54 @@ app.use(express.json());
 // ==========================================
 
 app.use((req, res, next) => {
-    console.log("REQUEST:", req.method, req.originalUrl);
-    next();
+  console.log("REQUEST:", req.method, req.originalUrl);
+  next();
+});
+
+// ==========================================
+// BASIC TEST ROUTES
+// ==========================================
+
+app.get("/", (req, res) => {
+  res.status(200).send("CareerVault Backend is Running");
+});
+
+app.get("/test", (req, res) => {
+  res.send("TEST ROUTE WORKING");
+});
+
+app.get("/api/test", (req, res) => {
+  res.json({
+    message: "API is working",
+  });
+});
+
+// ==========================================
+// SERVE UPLOADED DOCUMENTS
+// ==========================================
+
+app.get("/uploads/:filename", (req, res) => {
+  const filePath = path.join(
+    __dirname,
+    "uploads",
+    req.params.filename
+  );
+
+  console.log("Trying to send file:");
+  console.log(filePath);
+
+  res.sendFile(filePath, (error) => {
+    if (error) {
+      console.error("File send error:", error);
+
+      if (!res.headersSent) {
+        res.status(404).json({
+          message: "File not found",
+          path: filePath,
+        });
+      }
+    }
+  });
 });
 
 // ==========================================
@@ -51,21 +100,27 @@ app.use("/api/profile", profileRoutes);
 // Skills
 app.use("/api/skills", skillRoutes);
 
+// Projects
+app.use("/api/projects", projectRoutes);
+
 // Job Applications
 app.use("/api/job-applications", jobApplicationRoutes);
 
-// Projects
-app.use("/api/projects", projectRoutes);
+// Documents
+app.use("/api/documents", documentRoutes);
+
+// Resume
+app.use("/api/resumes", resumeRoutes);
 
 // ==========================================
 // PROTECTED TEST ROUTE
 // ==========================================
 
 app.get("/api/protected", authMiddleware, (req, res) => {
-    res.json({
-        message: "You accessed a protected route!",
-        user: req.user
-    });
+  res.json({
+    message: "You accessed a protected route!",
+    user: req.user,
+  });
 });
 
 // ==========================================
@@ -73,25 +128,19 @@ app.get("/api/protected", authMiddleware, (req, res) => {
 // ==========================================
 
 app.get("/api/job-test", (req, res) => {
-    console.log("JOB TEST ROUTE HIT");
+  console.log("JOB TEST ROUTE HIT");
 
-    res.json({
-        message: "Job application route connection is working"
-    });
+  res.json({
+    message: "Job application route connection is working",
+  });
 });
 
 // ==========================================
-// BASIC TEST ROUTES
+// RESUME TEST ROUTE
 // ==========================================
 
-app.get("/", (req, res) => {
-    res.send("CareerVault Backend is Running");
-});
-
-app.get("/api/test", (req, res) => {
-    res.json({
-        message: "API is working"
-    });
+app.get("/api/resumes-test", (req, res) => {
+  res.status(200).send("SERVER RESUME TEST WORKING");
 });
 
 // ==========================================
@@ -105,77 +154,89 @@ const PORT = process.env.PORT || 5000;
 // ==========================================
 
 const startServer = async () => {
-    try {
-        // Connect to MongoDB
-        await connectDB();
+  try {
+    // Connect MongoDB
+    await connectDB();
 
-        // ==========================================
-        // TEST SKILL MODEL
-        // ==========================================
+    // ==========================================
+    // TEST SKILL MODEL
+    // ==========================================
 
-        console.log("Testing Skill model connection...");
+    console.log("Testing Skill model connection...");
 
-        console.log(
-            "Mongoose readyState:",
-            mongoose.connection.readyState
-        );
+    console.log(
+      "Mongoose readyState:",
+      mongoose.connection.readyState
+    );
 
-        console.log(
-            "Skill model readyState:",
-            Skill.db.readyState
-        );
+    console.log(
+      "Skill model readyState:",
+      Skill.db.readyState
+    );
 
-        const testSkills = await Skill.find().limit(1);
+    const testSkills = await Skill.find().limit(1);
 
-        console.log(
-            "Skill model test successful. Documents found:",
-            testSkills.length
-        );
+    console.log(
+      "Skill model test successful. Documents found:",
+      testSkills.length
+    );
 
-        // ==========================================
-        // START EXPRESS SERVER
-        // ==========================================
+    // ==========================================
+    // START EXPRESS SERVER
+    // ==========================================
 
-        app.listen(PORT, () => {
-            console.log(
-                `CareerVault server running on port ${PORT}`
-            );
+    app.listen(PORT, () => {
+      console.log("=================================");
+      console.log("CareerVault server running");
+      console.log(`Port: ${PORT}`);
+      console.log("=================================");
 
-            console.log(
-                `Profile API: http://localhost:${PORT}/api/profile`
-            );
+      console.log(
+        `Auth API: http://localhost:${PORT}/api/auth`
+      );
 
-            console.log(
-                `Skills API: http://localhost:${PORT}/api/skills`
-            );
+      console.log(
+        `Profile API: http://localhost:${PORT}/api/profile`
+      );
 
-            console.log(
-                `Job Applications API: http://localhost:${PORT}/api/job-applications`
-            );
+      console.log(
+        `Skills API: http://localhost:${PORT}/api/skills`
+      );
 
-            console.log(
-                `Projects API: http://localhost:${PORT}/api/projects`
-            );
+      console.log(
+        `Projects API: http://localhost:${PORT}/api/projects`
+      );
 
-            console.log(
-                `Job Test API: http://localhost:${PORT}/api/job-test`
-            );
+      console.log(
+        `Job Applications API: http://localhost:${PORT}/api/job-applications`
+      );
 
-            console.log(
-                `Protected API: http://localhost:${PORT}/api/protected`
-            );
+      console.log(
+        `Documents API: http://localhost:${PORT}/api/documents`
+      );
 
-            console.log(
-                `Auth API: http://localhost:${PORT}/api/auth`
-            );
-        });
+      console.log(
+        `Resume API: http://localhost:${PORT}/api/resumes`
+      );
 
-    } catch (error) {
-        console.log("Server startup failed");
-        console.log(error.message);
+      console.log(
+        `Resume Test: http://localhost:${PORT}/api/resumes-test`
+      );
 
-        process.exit(1);
-    }
+      console.log(
+        `Uploads: http://localhost:${PORT}/uploads`
+      );
+
+      console.log(
+        `Protected API: http://localhost:${PORT}/api/protected`
+      );
+    });
+  } catch (error) {
+    console.log("Server startup failed");
+    console.log(error.message);
+
+    process.exit(1);
+  }
 };
 
 // ==========================================

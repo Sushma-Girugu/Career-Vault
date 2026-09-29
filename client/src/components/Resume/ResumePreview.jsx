@@ -1,7 +1,11 @@
 function ResumePreview({ resume }) {
   return (
     <div className="resume-preview">
-      <h1>Resume Preview</h1>
+  <button onClick={() => window.print()}>
+    Download / Print Resume
+  </button>
+
+  <h1>Resume Preview</h1>
 
       <h2>{resume.personalInfo.name || "Your Name"}</h2>
 
