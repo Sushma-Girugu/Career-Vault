@@ -1,5 +1,5 @@
+import JobApplications from "./components/JobApplications";
 import { useEffect, useState } from "react";
-import Projects from "./components/Projects/Projects";
 import Portfolio from "./components/Portfolio/Portfolio";
 import "./App.css";
 
@@ -8,6 +8,7 @@ import JobTest from "./components/JobTest/JobTest";
 import Resume from "./components/Resume";
 import Auth from "./components/Auth/Auth";
 import Gemini from "./components/Gemini/Gemini";
+
 
 const API = "http://localhost:5000/api";
 
@@ -164,6 +165,43 @@ function App() {
     setMessage("");
     setError("");
   };
+
+  const loadApplicationCount = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(
+        `${API}/job-applications`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && Array.isArray(data)) {
+        setStats((prev) => ({
+          ...prev,
+          applications: data.length
+        }));
+      }
+    } catch (err) {
+      console.log(
+        "Application count error:",
+        err.message
+      );
+    }
+  };
+
+  useEffect(() => {
+    loadApplicationCount();
+  }, [activePage]);
 
   const loadProfile = async () => {
     const token = getToken();
@@ -1370,7 +1408,15 @@ function App() {
           <div className="success-message">{message}</div>
         )}
 
-        {error && (
+        {/*
+ ======================================
+    JOB APPLICATIONS
+====================================== */}
+
+{activePage === "Job Applications" && (
+  <JobApplications />
+)}
+{error && (
           <div className="error-message">{error}</div>
         )}
 
