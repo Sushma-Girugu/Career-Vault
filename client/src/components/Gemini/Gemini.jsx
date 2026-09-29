@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
+
 const API = "http://localhost:5000/api";
 
 function Gemini({ profile, skills }) {
@@ -8,26 +9,24 @@ function Gemini({ profile, skills }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const askGemini = async (e) => {
-    e.preventDefault();
-
+  const askGemini = async (question) => {
     setError("");
     setAnswer("");
 
-    if (!prompt.trim()) {
+    if (!question.trim()) {
       setError("Please enter a question.");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setError("Please login first.");
       return;
     }
 
     try {
       setLoading(true);
-
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        setError("Please login first.");
-        return;
-      }
 
       const response = await fetch(`${API}/gemini/ask`, {
         method: "POST",
@@ -35,8 +34,8 @@ function Gemini({ profile, skills }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-       body: JSON.stringify({
-  prompt: `
+        body: JSON.stringify({
+          prompt: `
 You are the AI career assistant inside CareerVault.
 
 Here is the user's profile:
@@ -46,21 +45,36 @@ Here are the user's skills:
 ${JSON.stringify(skills, null, 2)}
 
 User's question:
-${prompt.trim()}
+${question.trim()}
 
 Give practical, personalized career advice based on the user's profile and skills.
 If the provided profile or skills do not contain enough information, clearly say what information is missing.
 `
-})
+        })
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+
+      console.log("Gemini status:", response.status);
+      console.log("Gemini response:", responseText);
+
+      let data;
+
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error(
+          `Gemini server returned a non-JSON response. Status: ${response.status}`
+        );
+      }
 
       if (!response.ok) {
-  throw new Error(
-    data.error || data.message || "Failed to get response from Gemini."
-  );
-}
+        throw new Error(
+          data.error ||
+            data.message ||
+            "Failed to get response from Gemini."
+        );
+      }
 
       setAnswer(data.answer || "No response received.");
     } catch (err) {
@@ -72,6 +86,27 @@ If the provided profile or skills do not contain enough information, clearly say
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    askGemini(prompt);
+  };
+
+  const handleSkillGap = () => {
+    const question =
+      "Analyze my current skills and identify the most important skills I should learn for a software engineering internship.";
+
+    setPrompt(question);
+    askGemini(question);
+  };
+
+  const handleResumeImprovement = () => {
+    const question =
+      "Review my profile and skills and give me specific recommendations to improve my resume for a software engineering internship.";
+
+    setPrompt(question);
+    askGemini(question);
   };
 
   return (
@@ -86,14 +121,9 @@ If the provided profile or skills do not contain enough information, clearly say
       </div>
 
       <div className="panel">
-
-        <form onSubmit={askGemini}>
-
+        <form onSubmit={handleSubmit}>
           <div className="field">
-
-            <label>
-              Ask Gemini
-            </label>
+            <label>Ask Gemini</label>
 
             <textarea
               value={prompt}
@@ -101,7 +131,6 @@ If the provided profile or skills do not contain enough information, clearly say
               placeholder="Example: How can I improve my resume for a software engineering internship?"
               rows="6"
             />
-
           </div>
 
           <button
@@ -111,33 +140,25 @@ If the provided profile or skills do not contain enough information, clearly say
           >
             {loading ? "Thinking..." : "Ask Gemini"}
           </button>
+
           <button
-  type="button"
-  className="secondary-btn"
-  disabled={loading}
-  onClick={() => {
-    setPrompt(
-      "Analyze my current skills and identify the most important skills I should learn for a software engineering internship."
-    );
-  }}
->
-  Skill Gap Analysis
-</button>
-<button
-  type="button"
-  className="secondary-btn"
-  disabled={loading}
-  onClick={() => {
-    setPrompt(
-      "Review my profile and skills and give me specific recommendations to improve my resume for a software engineering internship."
-    );
-  }}
->
-  Resume Improvement
-</button>
+            type="button"
+            className="secondary-btn"
+            disabled={loading}
+            onClick={handleSkillGap}
+          >
+            {loading ? "Thinking..." : "Skill Gap Analysis"}
+          </button>
 
+          <button
+            type="button"
+            className="secondary-btn"
+            disabled={loading}
+            onClick={handleResumeImprovement}
+          >
+            {loading ? "Thinking..." : "Resume Improvement"}
+          </button>
         </form>
-
       </div>
 
       {error && (
@@ -148,7 +169,6 @@ If the provided profile or skills do not contain enough information, clearly say
 
       {answer && (
         <div className="panel">
-
           <div className="panel-header">
             <div>
               <h3>Gemini Response</h3>
@@ -156,14 +176,10 @@ If the provided profile or skills do not contain enough information, clearly say
           </div>
 
           <div>
-           <ReactMarkdown>
-  {answer}
-</ReactMarkdown>
+            <ReactMarkdown>{answer}</ReactMarkdown>
           </div>
-
         </div>
       )}
-
     </section>
   );
 }
