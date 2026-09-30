@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const Skill = require("../models/Skill");
+const Skill = require("../models/skill");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();

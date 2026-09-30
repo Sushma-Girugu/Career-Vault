@@ -29,7 +29,7 @@ const resumeRoutes = require("./routes/resumeRoutes");
 // MODELS
 // =====================================================
 
-const Skill = require("./models/Skill");
+const Skill = require("./models/skill");
 
 // =====================================================
 // EXPRESS APP
