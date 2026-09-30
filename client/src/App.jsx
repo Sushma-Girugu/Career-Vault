@@ -877,19 +877,29 @@ function App() {
             <b>→</b>
           </button>
 
-          <button
-            type="button"
-            className="quick-action"
-            onClick={() => handleNavigation("Resume")}
-          >
-            <span>▥</span>
-            View Resume
-            <b>→</b>
-          </button>
-        </div>
-      </div>
-    </section>
-  );
+      <button
+        onClick={() => setPage("resume")}
+      >
+        Resume
+      </button>
+      <button
+        onClick={() => setPage("jobtest")}
+      >
+        Job Tests
+      </button>
+
+      <hr />
+      <button
+  onClick={() => handleNavigation("Analytics")}
+>
+  Analytics
+</button>
+
+<button
+  onClick={() => handleNavigation("Notifications")}
+>
+  Notifications
+</button>
 
   const renderProfile = () => (
     <section>
@@ -1379,7 +1389,7 @@ function App() {
         </div>
       </aside>
 
-      <main className="main">
+                <main className="main">
         <header className="topbar">
           <div>
             <h1>{activePage}</h1>
@@ -1408,15 +1418,15 @@ function App() {
           <div className="success-message">{message}</div>
         )}
 
-        {/*
- ======================================
-    JOB APPLICATIONS
-====================================== */}
+        {/* ======================================
+            JOB APPLICATIONS
+        ====================================== */}
 
-{activePage === "Job Applications" && (
-  <JobApplications />
-)}
-{error && (
+        {activePage === "Job Applications" && (
+          <JobApplications />
+        )}
+
+        {error && (
           <div className="error-message">{error}</div>
         )}
 
@@ -1455,6 +1465,22 @@ function App() {
 
         {activePage === "Gemini AI" && (
           <Gemini profile={profile} skills={skills} />
+        )}
+
+        {/* ======================================
+            ANALYTICS
+        ====================================== */}
+
+        {activePage === "Analytics" && (
+          <Analytics />
+        )}
+
+        {/* ======================================
+            NOTIFICATIONS
+        ====================================== */}
+
+        {activePage === "Notifications" && (
+          <NotificationPanel />
         )}
       </main>
     </div>
