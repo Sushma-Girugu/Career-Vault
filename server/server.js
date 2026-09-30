@@ -12,15 +12,17 @@ const profileRoutes = require("./routes/profileRoutes");
 const skillRoutes = require("./routes/skillRoutes");
 const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
 const questionRoutes = require("./routes/questionRoutes");
+
+const analyticsRoutes = require("./routes/analytics");
+const notificationRoutes = require("./routes/notifications");
+
 const projectRoutes = require("./routes/projectRoutes");
 const geminiRoutes = require("./routes/geminiRoutes");
 const achievementRoutes = require("./routes/achievementRoutes");
 const socialLinkRoutes = require("./routes/socialLinkRoutes");
 
 // Models
-const Skill = require("./models/Skill");
-
-const app = express();
+const Skill = require("./models/Skill");const app = express();
 
 // ==========================================
 // MIDDLEWARE
@@ -59,9 +61,10 @@ app.use(
     "/api/job-applications",
     jobApplicationRoutes
 );
-
-// Interview / Questions
-app.use("/api/questions", questionRoutes);
+app.use(
+  "/api/questions",
+  questionRoutes
+);
 
 // Projects
 app.use("/api/projects", projectRoutes);
@@ -71,6 +74,12 @@ app.use("/api/achievements", achievementRoutes);
 
 // Social Links
 app.use("/api/social-links", socialLinkRoutes);
+
+// Analytics
+app.use("/api/analytics", analyticsRoutes);
+
+// Notifications
+app.use("/api/notifications", notificationRoutes);
 
 // ==========================================
 // JOB APPLICATION TEST ROUTE
