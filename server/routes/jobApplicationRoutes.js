@@ -1,99 +1,218 @@
 const express = require("express");
-const router = express.Router();
-
 const JobApplication = require("../models/JobApplication");
 const authMiddleware = require("../middleware/authMiddleware");
 
-// ADD JOB APPLICATION
+const router = express.Router();
+
+console.log("JOB APPLICATION ROUTES FILE LOADED");
+
+// =====================================================
+// ADD APPLICATION
+// POST /api/job-applications
+// =====================================================
+
 router.post("/", authMiddleware, async (req, res) => {
+  console.log("POST JOB APPLICATION ROUTE HIT");
+  console.log("Request body:", req.body);
+  console.log("User:", req.user);
+
   try {
-    const application = await JobApplication.create({
-      ...req.body,
-      userId: req.user.userId,
-    });
+    const {
+      company,
+      role,
+      jobTitle,
+      status,
+      appliedDate,
+      applicationDate,
+      jobLink,
+      location,
+      jobType,
+      notes
+    } = req.body;
 
-    res.status(201).json(application);
-  } catch (error) {
-    console.log("Create application error:", error.message);
-
-    res.status(500).json({
-      message: "Failed to create application",
-    });
-  }
-});
-
-// GET ALL JOB APPLICATIONS
-router.get("/", authMiddleware, async (req, res) => {
-  try {
-    const applications = await JobApplication.find({
-      userId: req.user.userId,
-    }).sort({ applicationDate: -1 });
-
-    res.json(applications);
-  } catch (error) {
-    console.log("Fetch applications error:", error.message);
-
-    res.status(500).json({
-      message: "Failed to fetch applications",
-    });
-  }
-});
-
-// UPDATE JOB APPLICATION
-router.put("/:id", authMiddleware, async (req, res) => {
-  try {
-    const application = await JobApplication.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        userId: req.user.userId,
-      },
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-
-    if (!application) {
-      return res.status(404).json({
-        message: "Application not found",
+    // Validate company
+    if (!company || !company.trim()) {
+      return res.status(400).json({
+        message: "Company name is required"
       });
     }
 
-    res.json(application);
+    // Support both role and jobTitle
+    const finalJobTitle = (role || jobTitle || "").trim();
+
+    if (!finalJobTitle) {
+      return res.status(400).json({
+        message: "Job role is required"
+      });
+    }
+
+    // Support both appliedDate and applicationDate
+    const finalApplicationDate =
+      appliedDate || applicationDate;
+
+    const application = new JobApplication({
+      // IMPORTANT: authMiddleware provides req.user.userId
+      userId: req.user.userId,
+
+      company: company.trim(),
+
+      jobTitle: finalJobTitle,
+
+      location: location || "",
+
+      jobType: jobType || "Internship",
+
+      applicationDate: finalApplicationDate
+        ? new Date(finalApplicationDate)
+        : new Date(),
+
+      status: status || "Applied",
+
+      jobLink: jobLink || "",
+
+      notes: notes || ""
+    });
+
+    console.log(
+      "Application before save:",
+      application
+    );
+
+    const savedApplication =
+      await application.save();
+
+    console.log(
+      "Application saved successfully:",
+      savedApplication._id
+    );
+
+    res.status(201).json({
+      message: "Job application added successfully",
+      application: savedApplication
+    });
+
   } catch (error) {
-    console.log("Update application error:", error.message);
+    console.error(
+      "Create application error:",
+      error.message
+    );
 
     res.status(500).json({
-      message: "Failed to update application",
+      message: "Failed to create application",
+      error: error.message
     });
   }
 });
 
-// DELETE JOB APPLICATION
-router.delete("/:id", authMiddleware, async (req, res) => {
-  try {
-    const application = await JobApplication.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.userId,
-    });
 
-    if (!application) {
+// =====================================================
+// GET APPLICATIONS
+// GET /api/job-applications
+// =====================================================
+
+router.get("/", authMiddleware, async (req, res) => {
+  try {
+    const applications =
+      await JobApplication.find({
+        userId: req.user.userId
+      }).sort({ createdAt: -1 });
+
+    res.json(applications);
+
+  } catch (error) {
+    console.error(
+      "Fetch applications error:",
+      error
+    );
+
+    res.status(500).json({
+      message: "Failed to fetch applications",
+      error: error.message
+    });
+  }
+});
+
+
+// =====================================================
+// UPDATE APPLICATION
+// PUT /api/job-applications/:id
+// =====================================================
+
+router.put("/:id", authMiddleware, async (req, res) => {
+  try {
+    const updatedApplication =
+      await JobApplication.findOneAndUpdate(
+        {
+          _id: req.params.id,
+          userId: req.user.userId
+        },
+        req.body,
+        {
+          new: true,
+          runValidators: true
+        }
+      );
+
+    if (!updatedApplication) {
       return res.status(404).json({
-        message: "Application not found",
+        message: "Application not found"
       });
     }
 
     res.json({
-      message: "Application deleted successfully",
+      message: "Application updated successfully",
+      application: updatedApplication
     });
+
   } catch (error) {
-    console.log("Delete application error:", error.message);
+    console.error(
+      "Update application error:",
+      error
+    );
 
     res.status(500).json({
-      message: "Failed to delete application",
+      message: "Failed to update application",
+      error: error.message
     });
   }
 });
+
+
+// =====================================================
+// DELETE APPLICATION
+// DELETE /api/job-applications/:id
+// =====================================================
+
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    const deletedApplication =
+      await JobApplication.findOneAndDelete({
+        _id: req.params.id,
+        userId: req.user.userId
+      });
+
+    if (!deletedApplication) {
+      return res.status(404).json({
+        message: "Application not found"
+      });
+    }
+
+    res.json({
+      message: "Application deleted successfully"
+    });
+
+  } catch (error) {
+    console.error(
+      "Delete application error:",
+      error
+    );
+
+    res.status(500).json({
+      message: "Failed to delete application",
+      error: error.message
+    });
+  }
+});
+
 
 module.exports = router;

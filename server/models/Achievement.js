@@ -17,6 +17,12 @@ const achievementSchema = new mongoose.Schema(
     link: {
       type: String,
       trim: true
+    },
+
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
     }
   },
   {
@@ -24,4 +30,7 @@ const achievementSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Achievement", achievementSchema);
+module.exports = mongoose.model(
+  "Achievement",
+  achievementSchema
+);

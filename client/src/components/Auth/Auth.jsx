@@ -4,11 +4,9 @@ const API = "http://localhost:5000/api";
 
 function Auth({ onLogin }) {
   const [mode, setMode] = useState("login");
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -53,9 +51,7 @@ function Auth({ onLogin }) {
       }
 
       if (mode === "register") {
-        setMessage(
-          "Registration successful! You can now log in."
-        );
+        setMessage("Registration successful! You can now log in.");
 
         setMode("login");
         setName("");
@@ -71,16 +67,12 @@ function Auth({ onLogin }) {
       localStorage.setItem("token", data.token);
 
       if (data.user) {
-        localStorage.setItem(
-          "user",
-          JSON.stringify(data.user)
-        );
+        localStorage.setItem("user", JSON.stringify(data.user));
       }
 
       setMessage("Login successful!");
 
       onLogin(data.user);
-
     } catch (err) {
       console.error("Authentication error:", err);
 
@@ -92,213 +84,237 @@ function Auth({ onLogin }) {
     }
   };
 
+  const switchMode = () => {
+    setMode(mode === "login" ? "register" : "login");
+    setError("");
+    setMessage("");
+  };
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#f5f7fb",
-        padding: "20px"
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "430px",
-          background: "white",
-          padding: "35px",
-          borderRadius: "16px",
-          boxShadow: "0 10px 35px rgba(0,0,0,0.1)"
-        }}
-      >
-        <h1
-          style={{
-            textAlign: "center",
-            marginBottom: "8px"
-          }}
-        >
-          CareerVault
-        </h1>
+    <div className="auth-page">
 
-        <p
-          style={{
-            textAlign: "center",
-            color: "#666",
-            marginBottom: "30px"
-          }}
-        >
-          {mode === "login"
-            ? "Login to your career dashboard"
-            : "Create your CareerVault account"}
-        </p>
+      {/* LEFT SIDE */}
+      <div className="auth-showcase">
 
-        {message && (
-          <div
-            style={{
-              background: "#e8f7ee",
-              color: "#18794e",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "15px"
-            }}
-          >
-            {message}
+        <div className="auth-brand">
+          <div className="auth-logo">
+            CV
           </div>
-        )}
 
-        {error && (
-          <div
-            style={{
-              background: "#fdecec",
-              color: "#c62828",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "15px"
-            }}
-          >
-            {error}
+          <div>
+            <h1>CareerVault</h1>
+            <span>Your Career. Our Support.</span>
           </div>
-        )}
+        </div>
 
-        <form onSubmit={handleSubmit}>
+        <div className="auth-showcase-copy">
 
-          {mode === "register" && (
-            <div style={{ marginBottom: "18px" }}>
-              <label>Name</label>
+          <span className="auth-kicker">
+            BUILD • LEARN • APPLY • GROW
+          </span>
 
-              <input
-                type="text"
-                value={name}
-                onChange={(e) =>
-                  setName(e.target.value)
-                }
-                placeholder="Enter your name"
-                required
-                style={inputStyle}
-              />
+          <h2>
+            Plan today.
+            <br />
+            Build your career tomorrow.
+          </h2>
+
+          <p>
+            An all-in-one platform to manage your skills,
+            projects, applications and complete career journey.
+          </p>
+
+        </div>
+
+        <div className="auth-benefits">
+
+          <div>
+            <b>01</b>
+
+            <span>
+              <strong>Build your profile</strong>
+
+              <small>
+                Create a job-ready professional profile.
+              </small>
+            </span>
+          </div>
+
+          <div>
+            <b>02</b>
+
+            <span>
+              <strong>Track your growth</strong>
+
+              <small>
+                Keep skills, projects and applications organized.
+              </small>
+            </span>
+          </div>
+
+          <div>
+            <b>03</b>
+
+            <span>
+              <strong>Get job ready</strong>
+
+              <small>
+                Prepare with tests, resume tools and AI.
+              </small>
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* RIGHT SIDE */}
+      <div className="auth-card-wrap">
+
+        <div className="auth-card">
+
+          <div className="auth-card-head">
+
+            <span className="auth-kicker">
+              {mode === "login"
+                ? "WELCOME BACK"
+                : "GET STARTED"}
+            </span>
+
+            <h2>
+              {mode === "login"
+                ? "Sign in to CareerVault"
+                : "Create your account"}
+            </h2>
+
+            <p>
+              {mode === "login"
+                ? "Enter your credentials to continue."
+                : "Start building your career profile."}
+            </p>
+
+          </div>
+
+          {/* SUCCESS MESSAGE */}
+          {message && (
+            <div className="auth-message success">
+              {message}
             </div>
           )}
 
-          <div style={{ marginBottom: "18px" }}>
-            <label>Email</label>
-
-            <input
-              type="email"
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
-              placeholder="Enter your email"
-              required
-              style={inputStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: "22px" }}>
-            <label>Password</label>
-
-            <input
-              type="password"
-              value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
-              placeholder="Enter your password"
-              required
-              minLength={6}
-              style={inputStyle}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={buttonStyle}
-          >
-            {loading
-              ? "Please wait..."
-              : mode === "login"
-              ? "Login"
-              : "Create Account"}
-          </button>
-
-        </form>
-
-        <div
-          style={{
-            textAlign: "center",
-            marginTop: "22px"
-          }}
-        >
-          {mode === "login" ? (
-            <>
-              <span>Don't have an account? </span>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("register");
-                  setError("");
-                  setMessage("");
-                }}
-                style={linkButtonStyle}
-              >
-                Register
-              </button>
-            </>
-          ) : (
-            <>
-              <span>Already have an account? </span>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("login");
-                  setError("");
-                  setMessage("");
-                }}
-                style={linkButtonStyle}
-              >
-                Login
-              </button>
-            </>
+          {/* ERROR MESSAGE */}
+          {error && (
+            <div className="auth-message error">
+              {error}
+            </div>
           )}
+
+          <form onSubmit={handleSubmit}>
+
+            {/* NAME - REGISTER ONLY */}
+            {mode === "register" && (
+              <div className="auth-field">
+
+                <label>Name</label>
+
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) =>
+                    setName(e.target.value)
+                  }
+                  placeholder="Your full name"
+                  required
+                />
+
+              </div>
+            )}
+
+            {/* EMAIL */}
+            <div className="auth-field">
+
+              <label>Email</label>
+
+              <input
+                type="email"
+                value={email}
+                onChange={(e) =>
+                  setEmail(e.target.value)
+                }
+                placeholder="you@example.com"
+                required
+              />
+
+            </div>
+
+            {/* PASSWORD */}
+            <div className="auth-field">
+
+              <label>Password</label>
+
+              <input
+                type="password"
+                value={password}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
+                placeholder="Enter your password"
+                required
+                minLength={6}
+              />
+
+            </div>
+
+            {/* SUBMIT */}
+            <button
+              className="auth-submit"
+              type="submit"
+              disabled={loading}
+            >
+              {loading
+                ? "Please wait..."
+                : mode === "login"
+                ? "Sign In"
+                : "Create Account"}
+            </button>
+
+          </form>
+
+          {/* SWITCH LOGIN / REGISTER */}
+          <div className="auth-switch">
+
+            {mode === "login" ? (
+              <>
+                Don't have an account?
+
+                <button
+                  type="button"
+                  onClick={switchMode}
+                >
+                  Register
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?
+
+                <button
+                  type="button"
+                  onClick={switchMode}
+                >
+                  Sign In
+                </button>
+              </>
+            )}
+
+          </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }
-
-const inputStyle = {
-  width: "100%",
-  padding: "12px",
-  marginTop: "7px",
-  border: "1px solid #ddd",
-  borderRadius: "8px",
-  boxSizing: "border-box",
-  fontSize: "14px"
-};
-
-const buttonStyle = {
-  width: "100%",
-  padding: "13px",
-  border: "none",
-  borderRadius: "8px",
-  background: "#4f46e5",
-  color: "white",
-  fontSize: "16px",
-  fontWeight: "600",
-  cursor: "pointer"
-};
-
-const linkButtonStyle = {
-  border: "none",
-  background: "none",
-  color: "#4f46e5",
-  fontWeight: "600",
-  cursor: "pointer"
-};
 
 export default Auth;

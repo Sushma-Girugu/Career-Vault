@@ -2,79 +2,194 @@ const mongoose = require("mongoose");
 
 const resumeSchema = new mongoose.Schema(
   {
+    // =====================================================
+    // USER
+    // =====================================================
+
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true
+    },
+
+    // =====================================================
+    // PERSONAL INFORMATION
+    // =====================================================
+
     personalInfo: {
       name: {
         type: String,
-        required: true
+        required: true,
+        trim: true
       },
+
       email: {
         type: String,
         default: ""
       },
+
       phone: {
         type: String,
         default: ""
       },
+
       location: {
         type: String,
         default: ""
       },
+
       linkedin: {
         type: String,
         default: ""
       },
+
       github: {
         type: String,
         default: ""
       }
     },
 
+    // =====================================================
+    // EDUCATION
+    // =====================================================
+
     education: [
       {
-        institution: String,
-        degree: String,
-        year: String,
-        cgpa: String
+        institution: {
+          type: String,
+          default: ""
+        },
+
+        degree: {
+          type: String,
+          default: ""
+        },
+
+        year: {
+          type: String,
+          default: ""
+        },
+
+        cgpa: {
+          type: String,
+          default: ""
+        }
       }
     ],
+
+    // =====================================================
+    // SKILLS
+    // =====================================================
 
     skills: [
       {
-        name: String,
-        level: String
+        name: {
+          type: String,
+          default: ""
+        },
+
+        level: {
+          type: String,
+          default: ""
+        }
       }
     ],
+
+    // =====================================================
+    // PROJECTS
+    // =====================================================
 
     projects: [
       {
-        name: String,
-        description: String,
-        technologies: String,
-        link: String
+        name: {
+          type: String,
+          default: ""
+        },
+
+        description: {
+          type: String,
+          default: ""
+        },
+
+        technologies: {
+          type: String,
+          default: ""
+        },
+
+        link: {
+          type: String,
+          default: ""
+        }
       }
     ],
+
+    // =====================================================
+    // EXPERIENCE
+    // =====================================================
 
     experience: [
       {
-        company: String,
-        role: String,
-        duration: String,
-        description: String
+        company: {
+          type: String,
+          default: ""
+        },
+
+        role: {
+          type: String,
+          default: ""
+        },
+
+        duration: {
+          type: String,
+          default: ""
+        },
+
+        description: {
+          type: String,
+          default: ""
+        }
       }
     ],
+
+    // =====================================================
+    // ACHIEVEMENTS
+    // =====================================================
 
     achievements: [
       {
-        title: String,
-        description: String
+        title: {
+          type: String,
+          default: ""
+        },
+
+        description: {
+          type: String,
+          default: ""
+        }
       }
     ],
 
+    // =====================================================
+    // CERTIFICATIONS
+    // =====================================================
+
     certifications: [
       {
-        name: String,
-        issuer: String,
-        year: String
+        name: {
+          type: String,
+          default: ""
+        },
+
+        issuer: {
+          type: String,
+          default: ""
+        },
+
+        year: {
+          type: String,
+          default: ""
+        }
       }
     ]
   },

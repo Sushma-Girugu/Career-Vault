@@ -6,7 +6,10 @@ const mongoose = require("mongoose");
 
 const connectDB = require("./config/db");
 
-// Routes
+// =====================================================
+// ROUTES
+// =====================================================
+
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const skillRoutes = require("./routes/skillRoutes");
@@ -20,113 +23,236 @@ const projectRoutes = require("./routes/projectRoutes");
 const geminiRoutes = require("./routes/geminiRoutes");
 const achievementRoutes = require("./routes/achievementRoutes");
 const socialLinkRoutes = require("./routes/socialLinkRoutes");
+const resumeRoutes = require("./routes/resumeRoutes");
 
-// Models
-const Skill = require("./models/Skill");const app = express();
+// =====================================================
+// MODELS
+// =====================================================
 
-// ==========================================
+const Skill = require("./models/Skill");
+
+// =====================================================
+// EXPRESS APP
+// =====================================================
+
+const app = express();
+
+// =====================================================
 // MIDDLEWARE
-// ==========================================
+// =====================================================
 
 app.use(cors());
+
 app.use(express.json());
 
-// ==========================================
+// =====================================================
 // REQUEST LOGGER
-// ==========================================
+// =====================================================
 
 app.use((req, res, next) => {
-    console.log("REQUEST:", req.method, req.originalUrl);
+    console.log(
+        "REQUEST:",
+        req.method,
+        req.originalUrl
+    );
+
     next();
 });
 
-// ==========================================
+// =====================================================
 // API ROUTES
-// ==========================================
+// =====================================================
 
+// -----------------------------------------------------
 // Authentication
-app.use("/api/auth", authRoutes);
+// -----------------------------------------------------
 
+app.use(
+    "/api/auth",
+    authRoutes
+);
+
+// -----------------------------------------------------
 // Profile
-app.use("/api/profile", profileRoutes);
+// -----------------------------------------------------
 
+app.use(
+    "/api/profile",
+    profileRoutes
+);
+
+// -----------------------------------------------------
 // Skills
-app.use("/api/skills", skillRoutes);
+// -----------------------------------------------------
 
+app.use(
+    "/api/skills",
+    skillRoutes
+);
+
+// -----------------------------------------------------
 // Gemini AI
-app.use("/api/gemini", geminiRoutes);
+// -----------------------------------------------------
 
+app.use(
+    "/api/gemini",
+    geminiRoutes
+);
+
+// -----------------------------------------------------
 // Job Applications
+// -----------------------------------------------------
+
 app.use(
     "/api/job-applications",
     jobApplicationRoutes
 );
+
+// -----------------------------------------------------
+// Questions
+// -----------------------------------------------------
+
 app.use(
-  "/api/questions",
-  questionRoutes
+    "/api/questions",
+    questionRoutes
 );
 
+// -----------------------------------------------------
 // Projects
-app.use("/api/projects", projectRoutes);
+// -----------------------------------------------------
 
+app.use(
+    "/api/projects",
+    projectRoutes
+);
+
+// -----------------------------------------------------
 // Achievements
-app.use("/api/achievements", achievementRoutes);
+// -----------------------------------------------------
 
+app.use(
+    "/api/achievements",
+    achievementRoutes
+);
+
+// -----------------------------------------------------
 // Social Links
-app.use("/api/social-links", socialLinkRoutes);
+// -----------------------------------------------------
 
+app.use(
+    "/api/social-links",
+    socialLinkRoutes
+);
+
+// =====================================================
+// RESUME ROUTES
+// =====================================================
+
+app.use(
+    "/api/resumes",
+    (req, res, next) => {
+
+        console.log(
+            "### RESUME MOUNT HIT ###",
+            req.method,
+            req.originalUrl
+        );
+
+        next();
+    },
+    resumeRoutes
+);
+
+// -----------------------------------------------------
 // Analytics
-app.use("/api/analytics", analyticsRoutes);
+// -----------------------------------------------------
 
+app.use(
+    "/api/analytics",
+    analyticsRoutes
+);
+
+// -----------------------------------------------------
 // Notifications
-app.use("/api/notifications", notificationRoutes);
+// -----------------------------------------------------
 
-// ==========================================
+app.use(
+    "/api/notifications",
+    notificationRoutes
+);
+
+// =====================================================
 // JOB APPLICATION TEST ROUTE
-// ==========================================
+// =====================================================
 
-app.get("/api/job-test", (req, res) => {
-    console.log("JOB TEST ROUTE HIT");
+app.get(
+    "/api/job-test",
+    (req, res) => {
 
-    res.json({
-        message: "Job application route connection is working"
-    });
-});
+        console.log(
+            "JOB TEST ROUTE HIT"
+        );
 
-// ==========================================
+        res.json({
+            message:
+                "Job application route connection is working"
+        });
+    }
+);
+
+// =====================================================
 // BASIC TEST ROUTES
-// ==========================================
+// =====================================================
 
-app.get("/", (req, res) => {
-    res.send("CareerVault Backend is Running");
-});
+app.get(
+    "/",
+    (req, res) => {
 
-app.get("/api/test", (req, res) => {
-    res.json({
-        message: "API is working"
-    });
-});
+        res.send(
+            "CareerVault Backend is Running"
+        );
+    }
+);
 
-// ==========================================
+app.get(
+    "/api/test",
+    (req, res) => {
+
+        res.json({
+            message:
+                "API is working"
+        });
+    }
+);
+
+// =====================================================
 // PORT
-// ==========================================
+// =====================================================
 
-const PORT = process.env.PORT || 5000;
+const PORT =
+    process.env.PORT || 5000;
 
-// ==========================================
+// =====================================================
 // START SERVER
-// ==========================================
+// =====================================================
 
 const startServer = async () => {
+
     try {
-        // Connect to MongoDB
+
+        // -------------------------------------------------
+        // Connect MongoDB
+        // -------------------------------------------------
+
         await connectDB();
 
-        // ==========================================
-        // TEST SKILL MODEL
-        // ==========================================
+        // -------------------------------------------------
+        // Test Skill Model
+        // -------------------------------------------------
 
-        console.log("Testing Skill model connection...");
+        console.log(
+            "Testing Skill model connection..."
+        );
 
         console.log(
             "Mongoose readyState:",
@@ -138,73 +264,100 @@ const startServer = async () => {
             Skill.db.readyState
         );
 
-        const testSkills = await Skill.find().limit(1);
+        const testSkills =
+            await Skill.find().limit(1);
 
         console.log(
             "Skill model test successful. Documents found:",
             testSkills.length
         );
 
-        // ==========================================
-        // START EXPRESS SERVER
-        // ==========================================
+        // -------------------------------------------------
+        // Start Server
+        // -------------------------------------------------
 
-        app.listen(PORT, () => {
-            console.log(
-                `CareerVault server running on port ${PORT}`
-            );
+        app.listen(
+            PORT,
+            () => {
 
-            console.log(
-                `Profile API: http://localhost:${PORT}/api/profile`
-            );
+                console.log(
+                    `CareerVault server running on port ${PORT}`
+                );
 
-            console.log(
-                `Skills API: http://localhost:${PORT}/api/skills`
-            );
+                console.log(
+                    `Profile API: http://localhost:${PORT}/api/profile`
+                );
 
-            console.log(
-                `Job Applications API: http://localhost:${PORT}/api/job-applications`
-            );
+                console.log(
+                    `Skills API: http://localhost:${PORT}/api/skills`
+                );
 
-            console.log(
-                `Projects API: http://localhost:${PORT}/api/projects`
-            );
+                console.log(
+                    `Projects API: http://localhost:${PORT}/api/projects`
+                );
 
-            console.log(
-                `Achievements API: http://localhost:${PORT}/api/achievements`
-            );
+                console.log(
+                    `Job Applications API: http://localhost:${PORT}/api/job-applications`
+                );
 
-            console.log(
-                `Social Links API: http://localhost:${PORT}/api/social-links`
-            );
+                console.log(
+                    `Questions API: http://localhost:${PORT}/api/questions`
+                );
 
-            console.log(
-                `Job Test API: http://localhost:${PORT}/api/job-test`
-            );
+                console.log(
+                    `Achievements API: http://localhost:${PORT}/api/achievements`
+                );
 
-            console.log(
-                `Protected API: http://localhost:${PORT}/api/protected`
-            );
+                console.log(
+                    `Social Links API: http://localhost:${PORT}/api/social-links`
+                );
 
-            console.log(
-                `Auth API: http://localhost:${PORT}/api/auth`
-            );
+                console.log(
+                    `Resume API: http://localhost:${PORT}/api/resumes`
+                );
 
-            console.log(
-                `Gemini API: http://localhost:${PORT}/api/gemini`
-            );
-        });
+                console.log(
+                    `Analytics API: http://localhost:${PORT}/api/analytics`
+                );
+
+                console.log(
+                    `Notifications API: http://localhost:${PORT}/api/notifications`
+                );
+
+                console.log(
+                    `Job Test API: http://localhost:${PORT}/api/job-test`
+                );
+
+                console.log(
+                    `Auth API: http://localhost:${PORT}/api/auth`
+                );
+
+                console.log(
+                    `Gemini API: http://localhost:${PORT}/api/gemini`
+                );
+
+                console.log(
+                    `Protected API: http://localhost:${PORT}/api/protected`
+                );
+            }
+        );
 
     } catch (error) {
-        console.log("Server startup failed");
-        console.log(error.message);
+
+        console.log(
+            "Server startup failed"
+        );
+
+        console.log(
+            error.message
+        );
 
         process.exit(1);
     }
 };
 
-// ==========================================
+// =====================================================
 // RUN SERVER
-// ==========================================
+// =====================================================
 
 startServer();

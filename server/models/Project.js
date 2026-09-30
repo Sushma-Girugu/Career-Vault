@@ -2,6 +2,14 @@ const mongoose = require("mongoose");
 
 const projectSchema = new mongoose.Schema(
   {
+    // Logged-in user who owns this project
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+
     name: {
       type: String,
       required: true,
@@ -31,7 +39,9 @@ const projectSchema = new mongoose.Schema(
       trim: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 module.exports = mongoose.model("Project", projectSchema);

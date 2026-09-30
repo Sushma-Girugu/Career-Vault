@@ -77,3 +77,237 @@
         grid-template-columns: 1fr;
     }
 }
+/* ==========================================
+   DASHBOARD PROFILE PROGRESS
+========================================== */
+
+.dashboard-progress-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 45px 55px;
+    margin: 30px 0;
+    border-radius: 22px;
+    background: linear-gradient(
+        135deg,
+        #f5f3ff,
+        #ffffff
+    );
+    border: 1px solid #e5e7eb;
+}
+
+.progress-content {
+    max-width: 650px;
+}
+
+.progress-label {
+    color: #4f46e5;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+}
+
+.progress-content h2 {
+    font-size: 28px;
+    margin: 0 0 12px;
+}
+
+.progress-content p:not(.progress-label) {
+    color: #718096;
+    margin-bottom: 25px;
+}
+
+.complete-profile-button {
+    border: none;
+    background: #4f46e5;
+    color: white;
+    padding: 13px 22px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.complete-profile-button:hover {
+    background: #4338ca;
+}
+
+/* ==========================================
+   CIRCULAR PROGRESS
+========================================== */
+
+.profile-progress-circle {
+    width: 125px;
+    height: 125px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.profile-progress-inner {
+    width: 101px;
+    height: 101px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-progress-inner strong {
+    font-size: 25px;
+    color: #1f2937;
+}
+
+.profile-progress-inner span {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 3px;
+}
+
+/* ==========================================
+   CAREER OVERVIEW
+========================================== */
+
+.career-overview {
+    margin: 30px 0 20px;
+}
+
+.career-overview h2 {
+    margin-bottom: 5px;
+}
+
+.career-overview p {
+    color: #9ca3af;
+}
+
+/* ==========================================
+   DASHBOARD CARDS
+========================================== */
+
+.dashboard-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    cursor: pointer;
+}
+
+.dashboard-card-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0edff;
+    color: #4f46e5;
+    font-size: 18px;
+}
+
+.dashboard-number {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 4px 0;
+}
+
+.dashboard-card span {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* ==========================================
+   LOWER SECTION
+========================================== */
+
+.dashboard-lower-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-top: 25px;
+}
+
+.dashboard-panel {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 15px;
+    padding: 25px;
+}
+
+.panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.panel-header strong {
+    color: #4f46e5;
+    font-size: 22px;
+}
+
+.panel-header p,
+.dashboard-panel > p {
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 9px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: #4f46e5;
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.quick-actions button {
+    text-align: left;
+    padding: 12px 15px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.quick-actions button:hover {
+    background: #f5f3ff;
+    border-color: #4f46e5;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 850px) {
+
+    .dashboard-progress-section {
+        flex-direction: column;
+        gap: 30px;
+        text-align: center;
+        padding: 35px 25px;
+    }
+
+    .dashboard-lower-section {
+        grid-template-columns: 1fr;
+    }
+
+    .progress-content {
+        max-width: 100%;
+    }
+}

@@ -1,4 +1,4 @@
-import JobApplications from "./components/JobApplications";
+
 import { useEffect, useState } from "react";
 import Portfolio from "./components/Portfolio/Portfolio";
 import "./App.css";
@@ -8,6 +8,8 @@ import JobTest from "./components/JobTest/JobTest";
 import Resume from "./components/Resume";
 import Auth from "./components/Auth/Auth";
 import Gemini from "./components/Gemini/Gemini";
+import Analytics from "./pages/Analytics";
+import NotificationPanel from "./components/NotificationPanel";
 
 
 const API = "http://localhost:5000/api";
@@ -77,7 +79,9 @@ function App() {
     { name: "Job Applications", icon: "▤" },
     { name: "Job Test", icon: "✓" },
     { name: "Resume", icon: "▥" },
-    { name: "Gemini AI", icon: "✦" }
+    { name: "Gemini AI", icon: "✦" },
+    { name: "Analytics", icon: "◫" },
+    { name: "Notifications", icon: "♢" }
   ];
 
   const getToken = () => localStorage.getItem("token");
@@ -721,31 +725,33 @@ function App() {
 
   const renderDashboard = () => (
     <section>
-      <div className="welcome-card">
+      <div className="dashboard-hero">
         <div>
           <span className="small-label">YOUR CAREER JOURNEY</span>
 
-          <h2>
-            Build your future with CareerVault.
-          </h2>
+          <h2>Good Afternoon, {profile.name || currentUser?.name || "there"}! 👋</h2>
 
-          <p>
-            Keep your profile, skills, projects,
-            applications and resume organized in one place.
-          </p>
+          <p>Here’s your career progress overview.</p>
 
           <button
             type="button"
             className="primary-btn"
             onClick={() => handleNavigation("Profile")}
           >
-            Complete Profile →
+            Complete Profile
           </button>
         </div>
 
-        <div className="welcome-circle">
-          <span>{stats.profile}%</span>
-          <small>Profile</small>
+        <div
+          className="welcome-circle"
+          style={{
+            "--profile-progress": `${stats.profile}%`
+          }}
+        >
+          <div className="welcome-circle-inner">
+            <span>{stats.profile}%</span>
+            <small>Profile</small>
+          </div>
         </div>
       </div>
 
@@ -877,29 +883,10 @@ function App() {
             <b>→</b>
           </button>
 
-      <button
-        onClick={() => setPage("resume")}
-      >
-        Resume
-      </button>
-      <button
-        onClick={() => setPage("jobtest")}
-      >
-        Job Tests
-      </button>
-
-      <hr />
-      <button
-  onClick={() => handleNavigation("Analytics")}
->
-  Analytics
-</button>
-
-<button
-  onClick={() => handleNavigation("Notifications")}
->
-  Notifications
-</button>
+      </div>
+    </div>
+  </section>
+  );
 
   const renderProfile = () => (
     <section>
@@ -1369,35 +1356,51 @@ function App() {
         </nav>
 
         <div className="sidebar-bottom">
-          <div className="help-box">
+          <button
+            type="button"
+            className="help-box"
+            onClick={() => {
+              setActivePage("Profile");
+              setMessage(
+                "Need help? Complete your profile information first, then add your skills, projects, applications and resume."
+              );
+              setError("");
+            }}
+            title="Get help with your career profile"
+          >
             <div className="help-icon">?</div>
-
 
             <div>
               <strong>Need help?</strong>
-              <p>Build your career profile.</p>
+              <p>Click here for guidance.</p>
             </div>
-          </div>
-
-          <button
-            type="button"
-            className="logout"
-            onClick={handleLogout}
-          >
-            ↪ Sign Out
           </button>
         </div>
       </aside>
 
                 <main className="main">
         <header className="topbar">
-          <div>
+          <div className="topbar-title">
             <h1>{activePage}</h1>
             <p>{getPageDescription()}</p>
           </div>
 
+          <div className="top-search">
+            <span>⌕</span>
+            <input aria-label="Search" placeholder="Search anything..." />
+          </div>
+
           <div className="user-area">
             <div className="notification">♢</div>
+
+            <button
+              type="button"
+              className="top-signout"
+              onClick={handleLogout}
+              title="Sign out of CareerVault"
+            >
+              ↪ Sign Out
+            </button>
 
             <button
               type="button"
@@ -1422,9 +1425,6 @@ function App() {
             JOB APPLICATIONS
         ====================================== */}
 
-        {activePage === "Job Applications" && (
-          <JobApplications />
-        )}
 
         {error && (
           <div className="error-message">{error}</div>
@@ -1437,13 +1437,13 @@ function App() {
         {activePage === "Skills" && renderSkills()}
 
         {activePage === "Projects" && (
-          <section>
+          <section className="cv-module-page page-projects">
             <Projects />
           </section>
         )}
 
         {activePage === "Portfolio" && (
-          <section>
+          <section className="cv-module-page page-portfolio">
             <Portfolio />
           </section>
         )}
@@ -1452,19 +1452,21 @@ function App() {
           renderApplications()}
 
         {activePage === "Job Test" && (
-          <section>
+          <section className="cv-module-page page-job-test">
             <JobTest />
           </section>
         )}
 
         {activePage === "Resume" && (
-          <section>
+          <section className="cv-module-page page-resume">
             <Resume profile={profile} />
           </section>
         )}
 
         {activePage === "Gemini AI" && (
-          <Gemini profile={profile} skills={skills} />
+          <section className="cv-module-page page-gemini">
+            <Gemini profile={profile} skills={skills} />
+          </section>
         )}
 
         {/* ======================================
@@ -1472,7 +1474,9 @@ function App() {
         ====================================== */}
 
         {activePage === "Analytics" && (
-          <Analytics />
+          <section className="cv-module-page page-analytics">
+            <Analytics />
+          </section>
         )}
 
         {/* ======================================
@@ -1480,7 +1484,9 @@ function App() {
         ====================================== */}
 
         {activePage === "Notifications" && (
-          <NotificationPanel />
+          <section className="cv-module-page page-notifications">
+            <NotificationPanel />
+          </section>
         )}
       </main>
     </div>

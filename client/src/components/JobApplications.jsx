@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-const API = "http://localhost:5001/api";
+const API = "http://localhost:5000/api";
 
 function JobApplications() {
   const [applications, setApplications] = useState([]);
@@ -9,6 +9,9 @@ function JobApplications() {
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  // ID of application waiting for delete confirmation
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const [form, setForm] = useState({
     company: "",
@@ -21,9 +24,17 @@ function JobApplications() {
     notes: ""
   });
 
+  // ============================================
+  // TOKEN
+  // ============================================
+
   const getToken = () => {
     return localStorage.getItem("token");
   };
+
+  // ============================================
+  // RESET FORM
+  // ============================================
 
   const resetForm = () => {
     setForm({
@@ -41,6 +52,10 @@ function JobApplications() {
     setShowForm(false);
   };
 
+  // ============================================
+  // HANDLE INPUT
+  // ============================================
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -52,6 +67,10 @@ function JobApplications() {
     setError("");
     setMessage("");
   };
+
+  // ============================================
+  // LOAD APPLICATIONS
+  // ============================================
 
   const loadApplications = async () => {
     try {
@@ -65,6 +84,7 @@ function JobApplications() {
       const response = await fetch(
         `${API}/job-applications`,
         {
+          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -82,10 +102,28 @@ function JobApplications() {
       setApplications(
         Array.isArray(data) ? data : []
       );
+
     } catch (err) {
+      console.error(
+        "Load applications error:",
+        err
+      );
+
       setError(err.message);
     }
   };
+
+  // ============================================
+  // LOAD WHEN PAGE OPENS
+  // ============================================
+
+  useEffect(() => {
+    loadApplications();
+  }, []);
+
+  // ============================================
+  // SUBMIT APPLICATION
+  // ============================================
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,18 +131,21 @@ function JobApplications() {
     setError("");
     setMessage("");
 
+    // Company validation
     if (!form.company.trim()) {
-      setError("Company is required.");
+      setError("Please enter company name.");
       return;
     }
 
+    // Job title validation
     if (!form.jobTitle.trim()) {
-      setError("Job Title is required.");
+      setError("Please enter job title.");
       return;
     }
 
+    // Date validation
     if (!form.applicationDate) {
-      setError("Application Date is required.");
+      setError("Please select application date.");
       return;
     }
 
@@ -128,14 +169,28 @@ function JobApplications() {
           Authorization: `Bearer ${token}`
         },
 
-        body: JSON.stringify(form)
+        body: JSON.stringify({
+          company: form.company.trim(),
+          jobTitle: form.jobTitle.trim(),
+          location: form.location.trim(),
+          jobType: form.jobType,
+
+          // IMPORTANT
+          // Send applicationDate to backend
+          applicationDate: form.applicationDate,
+
+          status: form.status,
+          jobLink: form.jobLink.trim(),
+          notes: form.notes.trim()
+        })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to save application"
+          data.message ||
+          "Failed to save application"
         );
       }
 
@@ -148,27 +203,73 @@ function JobApplications() {
       );
 
       resetForm();
+
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+
     } catch (err) {
+      console.error(
+        "Save application error:",
+        err
+      );
+
       setError(err.message);
     }
   };
 
+  // ============================================
+  // EDIT
+  // ============================================
+
   const handleEdit = (application) => {
+    let dateValue = "";
+
+    if (application.applicationDate) {
+      dateValue = new Date(
+        application.applicationDate
+      )
+        .toISOString()
+        .slice(0, 10);
+    } else if (application.appliedDate) {
+      dateValue = new Date(
+        application.appliedDate
+      )
+        .toISOString()
+        .slice(0, 10);
+    }
+
     setForm({
       company: application.company || "",
-      jobTitle: application.jobTitle || "",
-      location: application.location || "",
-      jobType: application.jobType || "Internship",
-      applicationDate: application.applicationDate
-        ? application.applicationDate.slice(0, 10)
-        : "",
-      status: application.status || "Applied",
-      jobLink: application.jobLink || "",
-      notes: application.notes || ""
+
+      jobTitle:
+        application.jobTitle ||
+        application.role ||
+        "",
+
+      location:
+        application.location || "",
+
+      jobType:
+        application.jobType ||
+        "Internship",
+
+      applicationDate: dateValue,
+
+      status:
+        application.status ||
+        "Applied",
+
+      jobLink:
+        application.jobLink || "",
+
+      notes:
+        application.notes || ""
     });
 
     setEditingId(application._id);
     setShowForm(true);
+
     setError("");
     setMessage("");
 
@@ -178,15 +279,29 @@ function JobApplications() {
     });
   };
 
+  // ============================================
+  // START DELETE
+  // ============================================
+
+  const startDelete = (id) => {
+    setDeleteConfirmId(id);
+    setError("");
+    setMessage("");
+  };
+
+  // ============================================
+  // CANCEL DELETE
+  // ============================================
+
+  const cancelDelete = () => {
+    setDeleteConfirmId(null);
+  };
+
+  // ============================================
+  // DELETE APPLICATION
+  // ============================================
+
   const handleDelete = async (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this application?"
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     try {
       const token = getToken();
 
@@ -199,6 +314,7 @@ function JobApplications() {
         `${API}/job-applications/${id}`,
         {
           method: "DELETE",
+
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -209,22 +325,63 @@ function JobApplications() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to delete application"
+          data.message ||
+          "Failed to delete application"
         );
       }
 
       await loadApplications();
 
+      setDeleteConfirmId(null);
+
       setMessage(
         "Application deleted successfully!"
       );
+
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+
     } catch (err) {
+      console.error(
+        "Delete application error:",
+        err
+      );
+
       setError(err.message);
     }
   };
 
+  // ============================================
+  // FORMAT DATE
+  // ============================================
+
+  const formatDate = (date) => {
+    if (!date) {
+      return null;
+    }
+
+    const parsedDate = new Date(date);
+
+    if (isNaN(parsedDate.getTime())) {
+      return null;
+    }
+
+    return parsedDate.toLocaleDateString(
+      "en-GB"
+    );
+  };
+
+  // ============================================
+  // RENDER
+  // ============================================
+
   return (
     <section>
+
+      {/* ======================================
+          HEADER
+      ====================================== */}
 
       <div
         style={{
@@ -234,8 +391,10 @@ function JobApplications() {
           marginBottom: "24px"
         }}
       >
+
         <div>
           <h2>Job Applications</h2>
+
           <p>
             Track and manage your job applications.
           </p>
@@ -246,6 +405,18 @@ function JobApplications() {
           className="primary-btn"
           onClick={() => {
             setEditingId(null);
+
+            setForm({
+              company: "",
+              jobTitle: "",
+              location: "",
+              jobType: "Internship",
+              applicationDate: "",
+              status: "Applied",
+              jobLink: "",
+              notes: ""
+            });
+
             setShowForm(true);
             setError("");
             setMessage("");
@@ -253,15 +424,25 @@ function JobApplications() {
         >
           + Add Application
         </button>
+
       </div>
+
+      {/* ======================================
+          ADD / EDIT FORM
+      ====================================== */}
 
       {showForm && (
         <div
           className="panel"
-          style={{ marginBottom: "24px" }}
+          style={{
+            marginBottom: "24px"
+          }}
         >
+
           <div className="panel-header">
+
             <div>
+
               <h3>
                 {editingId
                   ? "Edit Application"
@@ -271,15 +452,22 @@ function JobApplications() {
               <p>
                 Enter your job application details.
               </p>
+
             </div>
+
           </div>
 
           <form onSubmit={handleSubmit}>
 
             <div className="form-grid">
 
+              {/* COMPANY */}
+
               <div className="field">
-                <label>Company *</label>
+
+                <label>
+                  Company *
+                </label>
 
                 <input
                   type="text"
@@ -288,10 +476,16 @@ function JobApplications() {
                   onChange={handleChange}
                   placeholder="Google"
                 />
+
               </div>
 
+              {/* JOB TITLE */}
+
               <div className="field">
-                <label>Job Title *</label>
+
+                <label>
+                  Job Title *
+                </label>
 
                 <input
                   type="text"
@@ -300,10 +494,16 @@ function JobApplications() {
                   onChange={handleChange}
                   placeholder="Software Engineer Intern"
                 />
+
               </div>
 
+              {/* LOCATION */}
+
               <div className="field">
-                <label>Location</label>
+
+                <label>
+                  Location
+                </label>
 
                 <input
                   type="text"
@@ -312,16 +512,23 @@ function JobApplications() {
                   onChange={handleChange}
                   placeholder="Bangalore"
                 />
+
               </div>
 
+              {/* JOB TYPE */}
+
               <div className="field">
-                <label>Job Type</label>
+
+                <label>
+                  Job Type
+                </label>
 
                 <select
                   name="jobType"
                   value={form.jobType}
                   onChange={handleChange}
                 >
+
                   <option value="Internship">
                     Internship
                   </option>
@@ -333,10 +540,15 @@ function JobApplications() {
                   <option value="Part-time">
                     Part-time
                   </option>
+
                 </select>
+
               </div>
 
+              {/* APPLICATION DATE */}
+
               <div className="field">
+
                 <label>
                   Application Date *
                 </label>
@@ -347,16 +559,23 @@ function JobApplications() {
                   value={form.applicationDate}
                   onChange={handleChange}
                 />
+
               </div>
 
+              {/* STATUS */}
+
               <div className="field">
-                <label>Status</label>
+
+                <label>
+                  Status
+                </label>
 
                 <select
                   name="status"
                   value={form.status}
                   onChange={handleChange}
                 >
+
                   <option value="Applied">
                     Applied
                   </option>
@@ -376,11 +595,18 @@ function JobApplications() {
                   <option value="Rejected">
                     Rejected
                   </option>
+
                 </select>
+
               </div>
 
+              {/* JOB LINK */}
+
               <div className="field full">
-                <label>Job Link</label>
+
+                <label>
+                  Job Link
+                </label>
 
                 <input
                   type="url"
@@ -389,10 +615,16 @@ function JobApplications() {
                   onChange={handleChange}
                   placeholder="https://..."
                 />
+
               </div>
 
+              {/* NOTES */}
+
               <div className="field full">
-                <label>Notes</label>
+
+                <label>
+                  Notes
+                </label>
 
                 <textarea
                   name="notes"
@@ -401,15 +633,25 @@ function JobApplications() {
                   placeholder="Interview date, recruiter details, notes..."
                   rows="4"
                 />
+
               </div>
 
             </div>
 
+            {/* ERROR */}
+
             {error && (
-              <div className="alert error">
+              <div
+                className="alert error"
+                style={{
+                  marginTop: "18px"
+                }}
+              >
                 ⚠ {error}
               </div>
             )}
+
+            {/* BUTTONS */}
 
             <div
               style={{
@@ -418,6 +660,7 @@ function JobApplications() {
                 marginTop: "18px"
               }}
             >
+
               <button
                 type="submit"
                 className="primary-btn"
@@ -433,21 +676,42 @@ function JobApplications() {
                 onClick={() => {
                   resetForm();
                   setError("");
+                  setMessage("");
                 }}
               >
                 Cancel
               </button>
+
             </div>
 
           </form>
+
         </div>
       )}
+
+      {/* ======================================
+          SUCCESS MESSAGE
+      ====================================== */}
 
       {message && (
         <div className="alert success">
           ✓ {message}
         </div>
       )}
+
+      {/* ======================================
+          ERROR MESSAGE
+      ====================================== */}
+
+      {!showForm && error && (
+        <div className="alert error">
+          ⚠ {error}
+        </div>
+      )}
+
+      {/* ======================================
+          NO APPLICATIONS
+      ====================================== */}
 
       {!showForm &&
         applications.length === 0 && (
@@ -458,6 +722,7 @@ function JobApplications() {
               padding: "50px 30px"
             }}
           >
+
             <h3>
               No job applications yet
             </h3>
@@ -465,8 +730,13 @@ function JobApplications() {
             <p>
               Click "+ Add Application" to add one.
             </p>
+
           </div>
         )}
+
+      {/* ======================================
+          APPLICATION LIST
+      ====================================== */}
 
       {applications.length > 0 && (
         <div
@@ -476,128 +746,244 @@ function JobApplications() {
           }}
         >
 
-          {applications.map((application) => (
+          {applications.map((application) => {
 
-            <div
-              className="panel"
-              key={application._id}
-            >
+            const applicationDate =
+              formatDate(
+                application.applicationDate ||
+                application.appliedDate
+              );
 
+            const jobTitle =
+              application.jobTitle ||
+              application.role ||
+              "Job Role";
+
+            return (
               <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "20px"
-                }}
+                className="panel"
+                key={application._id}
               >
-
-                <div>
-
-                  <h3>
-                    {application.jobTitle}
-                  </h3>
-
-                  <p>
-                    <strong>
-                      {application.company}
-                    </strong>
-
-                    {application.location
-                      ? ` • ${application.location}`
-                      : ""}
-                  </p>
-
-                  <p>
-                    Application Date:{" "}
-
-                    {application.applicationDate
-                      ? new Date(
-                          application.applicationDate
-                        ).toLocaleDateString()
-                      : "-"}
-                  </p>
-
-                  <p>
-                    Job Type: {application.jobType}
-                  </p>
-
-                  {application.jobLink && (
-                    <p>
-                      <a
-                        href={application.jobLink}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        View Job
-                      </a>
-                    </p>
-                  )}
-
-                  {application.notes && (
-                    <p>
-                      <strong>
-                        Notes:
-                      </strong>{" "}
-                      {application.notes}
-                    </p>
-                  )}
-
-                </div>
 
                 <div
                   style={{
-                    textAlign: "right"
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "20px"
                   }}
                 >
 
-                  <div
-                    style={{
-                      marginBottom: "12px"
-                    }}
-                  >
-                    <strong>
-                      {application.status}
-                    </strong>
+                  {/* =================================
+                      LEFT SIDE
+                  ================================= */}
+
+                  <div>
+
+                    <h3>
+                      {jobTitle}
+                    </h3>
+
+                    <p>
+                      <strong>
+                        {application.company}
+                      </strong>
+
+                      {application.location
+                        ? ` • ${application.location}`
+                        : ""}
+                    </p>
+
+                    {/* DATE */}
+
+                    <p>
+                      <strong>
+                        Applied:
+                      </strong>{" "}
+
+                      {applicationDate
+                        ? applicationDate
+                        : "Date not available"}
+                    </p>
+
+                    {/* JOB TYPE */}
+
+                    <p>
+                      Job Type:{" "}
+                      {application.jobType ||
+                        "Internship"}
+                    </p>
+
+                    {/* JOB LINK */}
+
+                    {application.jobLink && (
+                      <p>
+
+                        <a
+                          href={
+                            application.jobLink
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          View Job
+                        </a>
+
+                      </p>
+                    )}
+
+                    {/* NOTES */}
+
+                    {application.notes && (
+                      <p>
+
+                        <strong>
+                          Notes:
+                        </strong>{" "}
+
+                        {application.notes}
+
+                      </p>
+                    )}
+
                   </div>
 
+                  {/* =================================
+                      RIGHT SIDE
+                  ================================= */}
+
                   <div
                     style={{
-                      display: "flex",
-                      gap: "8px"
+                      textAlign: "right"
                     }}
                   >
 
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={() =>
-                        handleEdit(application)
-                      }
-                    >
-                      Edit
-                    </button>
+                    {/* STATUS */}
 
-                    <button
-                      type="button"
-                      className="cancel-btn"
-                      onClick={() =>
-                        handleDelete(
-                          application._id
-                        )
-                      }
+                    <div
+                      style={{
+                        marginBottom: "12px"
+                      }}
                     >
-                      Delete
-                    </button>
+
+                      <strong>
+                        {application.status ||
+                          "Applied"}
+                      </strong>
+
+                    </div>
+
+                    {/* BUTTONS */}
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        alignItems: "center"
+                      }}
+                    >
+
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() =>
+                          handleEdit(
+                            application
+                          )
+                        }
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        className="cancel-btn"
+                        onClick={() =>
+                          startDelete(
+                            application._id
+                          )
+                        }
+                      >
+                        Delete
+                      </button>
+
+                    </div>
 
                   </div>
 
                 </div>
 
+                {/* =================================
+                    INLINE DELETE CONFIRMATION
+                ================================= */}
+
+                {deleteConfirmId ===
+                  application._id && (
+
+                  <div
+                    style={{
+                      marginTop: "16px",
+                      padding: "14px 16px",
+                      borderRadius: "8px",
+                      border:
+                        "1px solid #f0b4b4",
+                      background:
+                        "#fff5f5",
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      alignItems: "center",
+                      gap: "15px"
+                    }}
+                  >
+
+                    <span
+                      style={{
+                        color: "#b42318",
+                        fontWeight: "500"
+                      }}
+                    >
+                      Are you sure you want
+                      to delete this
+                      application?
+                    </span>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px"
+                      }}
+                    >
+
+                      <button
+                        type="button"
+                        className="cancel-btn"
+                        onClick={() =>
+                          handleDelete(
+                            application._id
+                          )
+                        }
+                      >
+                        Yes, Delete
+                      </button>
+
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={
+                          cancelDelete
+                        }
+                      >
+                        Cancel
+                      </button>
+
+                    </div>
+
+                  </div>
+                )}
+
               </div>
-
-            </div>
-
-          ))}
+            );
+          })}
 
         </div>
       )}

@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./Portfolio.css";
 
-const PROFILE_API = "http://localhost:5000/api/profile";
-const SKILLS_API = "http://localhost:5000/api/skills";
-const PROJECTS_API = "http://localhost:5000/api/projects";
-const ACHIEVEMENTS_API = "http://localhost:5000/api/achievements";
-const SOCIAL_LINKS_API = "http://localhost:5000/api/social-links";
+const API = "http://localhost:5000/api";
 
 function Portfolio() {
   const [profile, setProfile] = useState(null);
@@ -14,116 +10,265 @@ function Portfolio() {
   const [achievements, setAchievements] = useState([]);
   const [socialLinks, setSocialLinks] = useState([]);
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     loadPortfolio();
   }, []);
 
+  const getHeaders = () => {
+    const token = localStorage.getItem("token");
+
+    return {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    };
+  };
+
   const loadPortfolio = async () => {
     try {
-      const profileResponse = await fetch(PROFILE_API);
-      const profileData = await profileResponse.json();
+      setLoading(true);
+
+      const headers = getHeaders();
+
+      const [
+        profileResponse,
+        skillsResponse,
+        projectsResponse,
+        achievementsResponse,
+        socialLinksResponse
+      ] = await Promise.all([
+        fetch(`${API}/profile`, {
+          headers
+        }),
+
+        fetch(`${API}/skills`, {
+          headers
+        }),
+
+        fetch(`${API}/projects`, {
+          headers
+        }),
+
+        fetch(`${API}/achievements`, {
+          headers
+        }),
+
+        fetch(`${API}/social-links`, {
+          headers
+        })
+      ]);
+
+      // -----------------------------
+      // PROFILE
+      // -----------------------------
 
       if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+
         if (Array.isArray(profileData)) {
-          setProfile(profileData[profileData.length - 1]);
+          setProfile(
+            profileData.length > 0
+              ? profileData[profileData.length - 1]
+              : null
+          );
         } else {
           setProfile(profileData);
         }
+      } else {
+        setProfile(null);
       }
 
-      const skillsResponse = await fetch(SKILLS_API);
-      const skillsData = await skillsResponse.json();
+      // -----------------------------
+      // SKILLS
+      // -----------------------------
 
       if (skillsResponse.ok) {
-        setSkills(skillsData);
+        const skillsData = await skillsResponse.json();
+
+        setSkills(
+          Array.isArray(skillsData)
+            ? skillsData
+            : []
+        );
+      } else {
+        setSkills([]);
       }
 
-      const projectsResponse = await fetch(PROJECTS_API);
-      const projectsData = await projectsResponse.json();
+      // -----------------------------
+      // PROJECTS
+      // -----------------------------
 
       if (projectsResponse.ok) {
-        setProjects(projectsData);
+        const projectsData = await projectsResponse.json();
+
+        setProjects(
+          Array.isArray(projectsData)
+            ? projectsData
+            : []
+        );
+      } else {
+        setProjects([]);
       }
 
-      const achievementsResponse = await fetch(
-        ACHIEVEMENTS_API
-      );
-      const achievementsData =
-        await achievementsResponse.json();
+      // -----------------------------
+      // ACHIEVEMENTS
+      // -----------------------------
 
       if (achievementsResponse.ok) {
-        setAchievements(achievementsData);
+        const achievementsData =
+          await achievementsResponse.json();
+
+        setAchievements(
+          Array.isArray(achievementsData)
+            ? achievementsData
+            : []
+        );
+      } else {
+        setAchievements([]);
       }
 
-      const socialLinksResponse = await fetch(
-        SOCIAL_LINKS_API
-      );
-      const socialLinksData =
-        await socialLinksResponse.json();
+      // -----------------------------
+      // SOCIAL LINKS
+      // -----------------------------
 
       if (socialLinksResponse.ok) {
-        setSocialLinks(socialLinksData);
+        const socialLinksData =
+          await socialLinksResponse.json();
+
+        setSocialLinks(
+          Array.isArray(socialLinksData)
+            ? socialLinksData
+            : []
+        );
+      } else {
+        setSocialLinks([]);
       }
+
     } catch (error) {
       console.error(
         "Portfolio loading error:",
         error
       );
+
+      setProfile(null);
+      setSkills([]);
+      setProjects([]);
+      setAchievements([]);
+      setSocialLinks([]);
+    } finally {
+      setLoading(false);
     }
   };
+
+  // -----------------------------
+  // LOADING
+  // -----------------------------
+
+  if (loading) {
+    return (
+      <div className="portfolio-container">
+        <section className="portfolio-section">
+          <p>Loading portfolio...</p>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="portfolio-container">
 
+      {/* =====================================
+          HERO
+      ===================================== */}
+
       <section className="portfolio-hero">
+
         <h1>
           {profile?.name || "My Portfolio"}
         </h1>
 
-        <p>
-          {profile?.branch ||
-            "Computer Science Student"}
-        </p>
+        {profile?.branch && (
+          <p>{profile.branch}</p>
+        )}
 
         {profile?.college && (
           <p>{profile.college}</p>
         )}
 
-        {profile?.email && (
-          <p>{profile.email}</p>
+        {profile?.bio && (
+          <p>{profile.bio}</p>
         )}
+
       </section>
 
+
+      {/* =====================================
+          ABOUT ME
+      ===================================== */}
+
       <section className="portfolio-section">
+
         <h2>About Me</h2>
 
         {profile ? (
           <div className="profile-details">
 
-            <p>
-              <strong>Name:</strong>{" "}
-              {profile.name || "Not available"}
-            </p>
+            {profile.name && (
+              <p>
+                <strong>Name:</strong>{" "}
+                {profile.name}
+              </p>
+            )}
 
-            <p>
-              <strong>Email:</strong>{" "}
-              {profile.email || "Not available"}
-            </p>
+            {profile.email && (
+              <p>
+                <strong>Email:</strong>{" "}
+                {profile.email}
+              </p>
+            )}
 
-            <p>
-              <strong>College:</strong>{" "}
-              {profile.college || "Not available"}
-            </p>
+            {profile.phone && (
+              <p>
+                <strong>Phone:</strong>{" "}
+                {profile.phone}
+              </p>
+            )}
 
-            <p>
-              <strong>Branch:</strong>{" "}
-              {profile.branch || "Not available"}
-            </p>
+            {profile.college && (
+              <p>
+                <strong>College:</strong>{" "}
+                {profile.college}
+              </p>
+            )}
 
-            <p>
-              <strong>Year:</strong>{" "}
-              {profile.year || "Not available"}
-            </p>
+            {profile.branch && (
+              <p>
+                <strong>Branch:</strong>{" "}
+                {profile.branch}
+              </p>
+            )}
+
+            {profile.year && (
+              <p>
+                <strong>Graduation Year:</strong>{" "}
+                {profile.year}
+              </p>
+            )}
+
+            {profile.location && (
+              <p>
+                <strong>Location:</strong>{" "}
+                {profile.location}
+              </p>
+            )}
+
+            {profile.bio && (
+              <p>
+                <strong>About:</strong>{" "}
+                {profile.bio}
+              </p>
+            )}
 
           </div>
         ) : (
@@ -131,9 +276,16 @@ function Portfolio() {
             Profile information is not available.
           </p>
         )}
+
       </section>
 
+
+      {/* =====================================
+          SKILLS
+      ===================================== */}
+
       <section className="portfolio-section">
+
         <h2>Skills</h2>
 
         {skills.length === 0 ? (
@@ -146,16 +298,32 @@ function Portfolio() {
                 className="portfolio-skill"
                 key={skill._id}
               >
-                <h3>{skill.name}</h3>
-                <p>{skill.level}</p>
+
+                <h3>
+                  {skill.name}
+                </h3>
+
+                {skill.level && (
+                  <p>
+                    {skill.level}
+                  </p>
+                )}
+
               </div>
             ))}
 
           </div>
         )}
+
       </section>
 
+
+      {/* =====================================
+          PROJECTS
+      ===================================== */}
+
       <section className="portfolio-section">
+
         <h2>Projects</h2>
 
         {projects.length === 0 ? (
@@ -168,18 +336,54 @@ function Portfolio() {
                 className="portfolio-project"
                 key={project._id}
               >
-                <h3>{project.name}</h3>
 
-                <p>
-                  {project.description}
-                </p>
+                <h3>
+                  {project.name}
+                </h3>
 
-                <p>
-                  <strong>
-                    Technologies:
-                  </strong>{" "}
-                  {project.technologies}
-                </p>
+                {project.description && (
+                  <p>
+                    {project.description}
+                  </p>
+                )}
+
+                {project.technologies && (
+                  <p>
+                    <strong>
+                      Technologies:
+                    </strong>{" "}
+                    {project.technologies}
+                  </p>
+                )}
+
+                {project.role && (
+                  <p>
+                    <strong>
+                      Role:
+                    </strong>{" "}
+                    {project.role}
+                  </p>
+                )}
+
+                {project.githubUrl && (
+                  <a
+                    href={project.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    GitHub
+                  </a>
+                )}
+
+                {project.demoUrl && (
+                  <a
+                    href={project.demoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Live Demo
+                  </a>
+                )}
 
                 {project.projectLink && (
                   <a
@@ -190,14 +394,22 @@ function Portfolio() {
                     View Project
                   </a>
                 )}
+
               </div>
             ))}
 
           </div>
         )}
+
       </section>
 
+
+      {/* =====================================
+          ACHIEVEMENTS
+      ===================================== */}
+
       <section className="portfolio-section">
+
         <h2>Achievements</h2>
 
         {achievements.length === 0 ? (
@@ -210,11 +422,18 @@ function Portfolio() {
                 className="portfolio-project"
                 key={achievement._id}
               >
-                <h3>{achievement.title}</h3>
 
-                <p>
-                  {achievement.description}
-                </p>
+                {achievement.title && (
+                  <h3>
+                    {achievement.title}
+                  </h3>
+                )}
+
+                {achievement.description && (
+                  <p>
+                    {achievement.description}
+                  </p>
+                )}
 
                 {achievement.link && (
                   <a
@@ -225,34 +444,82 @@ function Portfolio() {
                     View Achievement
                   </a>
                 )}
+
               </div>
             ))}
 
           </div>
         )}
+
       </section>
 
+
+      {/* =====================================
+          SOCIAL LINKS
+      ===================================== */}
+
       <section className="portfolio-section">
+
         <h2>Social Links</h2>
 
-        {socialLinks.length === 0 ? (
+        {socialLinks.length === 0 &&
+        !profile?.github &&
+        !profile?.linkedin &&
+        !profile?.portfolio ? (
           <p>No social links added yet.</p>
         ) : (
           <div className="social-links">
 
-            {socialLinks.map((socialLink) => (
+            {/* Profile GitHub */}
+            {profile?.github && (
               <a
-                key={socialLink._id}
-                href={socialLink.url}
+                href={profile.github}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {socialLink.platform}
+                GitHub
               </a>
+            )}
+
+            {/* Profile LinkedIn */}
+            {profile?.linkedin && (
+              <a
+                href={profile.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                LinkedIn
+              </a>
+            )}
+
+            {/* Profile Portfolio */}
+            {profile?.portfolio && (
+              <a
+                href={profile.portfolio}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Portfolio
+              </a>
+            )}
+
+            {/* Additional Social Links */}
+            {socialLinks.map((socialLink) => (
+              socialLink.url && (
+                <a
+                  key={socialLink._id}
+                  href={socialLink.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {socialLink.platform}
+                </a>
+              )
             ))}
 
           </div>
         )}
+
       </section>
 
     </div>

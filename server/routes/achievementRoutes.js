@@ -1,15 +1,40 @@
 const express = require("express");
 const router = express.Router();
-const Achievement = require("../models/Achievement");
 
-router.get("/", async (req, res) => {
+const Achievement = require("../models/Achievement");
+const authMiddleware = require("../middleware/authMiddleware");
+
+console.log("### NEW ACHIEVEMENT ROUTE LOADED ###");
+
+// ============================================
+// GET USER'S ACHIEVEMENTS
+// ============================================
+
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const achievements = await Achievement.find().sort({
+    console.log(
+      "Fetching achievements for user:",
+      req.user.id
+    );
+
+    const achievements = await Achievement.find({
+      userId: req.user.id
+    }).sort({
       createdAt: -1
     });
 
+    console.log(
+      "Achievements found:",
+      achievements.length
+    );
+
     res.json(achievements);
   } catch (error) {
+    console.error(
+      "Achievement fetch error:",
+      error.message
+    );
+
     res.status(500).json({
       message: "Failed to fetch achievements",
       error: error.message
@@ -17,20 +42,35 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+// ============================================
+// CREATE ACHIEVEMENT
+// ============================================
+
+router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { title, description, link } = req.body;
+    const {
+      title,
+      description,
+      link
+    } = req.body;
 
     const achievement = new Achievement({
       title,
       description,
-      link
+      link,
+      userId: req.user.id
     });
 
-    const savedAchievement = await achievement.save();
+    const savedAchievement =
+      await achievement.save();
 
     res.status(201).json(savedAchievement);
   } catch (error) {
+    console.error(
+      "Achievement create error:",
+      error.message
+    );
+
     res.status(400).json({
       message: "Failed to create achievement",
       error: error.message
@@ -38,16 +78,24 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+// ============================================
+// UPDATE ACHIEVEMENT
+// ============================================
+
+router.put("/:id", authMiddleware, async (req, res) => {
   try {
-    const achievement = await Achievement.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true
-      }
-    );
+    const achievement =
+      await Achievement.findOneAndUpdate(
+        {
+          _id: req.params.id,
+          userId: req.user.id
+        },
+        req.body,
+        {
+          new: true,
+          runValidators: true
+        }
+      );
 
     if (!achievement) {
       return res.status(404).json({
@@ -57,6 +105,11 @@ router.put("/:id", async (req, res) => {
 
     res.json(achievement);
   } catch (error) {
+    console.error(
+      "Achievement update error:",
+      error.message
+    );
+
     res.status(400).json({
       message: "Failed to update achievement",
       error: error.message
@@ -64,11 +117,17 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+// ============================================
+// DELETE ACHIEVEMENT
+// ============================================
+
+router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    const achievement = await Achievement.findByIdAndDelete(
-      req.params.id
-    );
+    const achievement =
+      await Achievement.findOneAndDelete({
+        _id: req.params.id,
+        userId: req.user.id
+      });
 
     if (!achievement) {
       return res.status(404).json({
@@ -80,6 +139,11 @@ router.delete("/:id", async (req, res) => {
       message: "Achievement deleted successfully"
     });
   } catch (error) {
+    console.error(
+      "Achievement delete error:",
+      error.message
+    );
+
     res.status(400).json({
       message: "Failed to delete achievement",
       error: error.message
