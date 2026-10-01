@@ -38,18 +38,39 @@ const Skill = require("./models/skill");
 const app = express();
 
 // =====================================================
-// MIDDLEWARE
+// CORS
 // =====================================================
 
+const FRONTEND_URL = "https://career-vault-green.vercel.app";
+
+// Handle CORS preflight requests BEFORE other middleware
+app.use((req, res, next) => {
+    if (req.method === "OPTIONS") {
+        res.header(
+            "Access-Control-Allow-Origin",
+            FRONTEND_URL
+        );
+
+        res.header(
+            "Access-Control-Allow-Methods",
+            "GET,POST,PUT,DELETE,PATCH,OPTIONS"
+        );
+
+        res.header(
+            "Access-Control-Allow-Headers",
+            "Content-Type,Authorization"
+        );
+
+        return res.sendStatus(204);
+    }
+
+    next();
+});
+
 app.use(cors({
-  origin: "https://career-vault-green.vercel.app"
+    origin: FRONTEND_URL
 }));
 
-app.options(/.*/, cors({
-    origin: "https://career-vault-green.vercel.app",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-}));
 app.use(express.json());
 
 // =====================================================
