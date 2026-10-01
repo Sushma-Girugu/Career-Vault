@@ -29,7 +29,7 @@ function Dashboard({ setPage }) {
             // ==========================================
 
             const skillsResponse = await fetch(
-                "https://career-vault-1xyt.onrender.com/api/skills",
+                "/api/skills",
                 {
                     headers: authHeaders
                 }
@@ -50,7 +50,7 @@ function Dashboard({ setPage }) {
             // ==========================================
 
             const applicationsResponse = await fetch(
-                "https://career-vault-1xyt.onrender.com/api/job-applications",
+                "/api/job-applications",
                 {
                     headers: authHeaders
                 }
@@ -72,7 +72,7 @@ function Dashboard({ setPage }) {
             // ==========================================
 
             const projectsResponse = await fetch(
-                "https://career-vault-1xyt.onrender.com/api/projects",
+                "/api/projects",
                 {
                     headers: authHeaders
                 }
@@ -94,7 +94,7 @@ function Dashboard({ setPage }) {
             // ==========================================
 
             const profileResponse = await fetch(
-                "https://career-vault-1xyt.onrender.com/api/profile",
+                "/api/profile",
                 {
                     headers: authHeaders
                 }

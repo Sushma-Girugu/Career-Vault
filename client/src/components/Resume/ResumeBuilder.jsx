@@ -160,7 +160,7 @@ function ResumeBuilder({ profile }) {
         }
 
         const response = await fetch(
-          "https://career-vault-1xyt.onrender.com/api/skills",
+          "/api/skills",
           {
             method: "GET",
 
@@ -247,7 +247,7 @@ function ResumeBuilder({ profile }) {
         }
 
         const response = await fetch(
-          "https://career-vault-1xyt.onrender.com/api/projects",
+          "/api/projects",
           {
             method: "GET",
 
@@ -347,7 +347,7 @@ function ResumeBuilder({ profile }) {
         }
 
         const response = await fetch(
-          "https://career-vault-1xyt.onrender.com/api/resumes",
+          "/api/resumes",
           {
             method: "GET",
 
@@ -540,8 +540,8 @@ function ResumeBuilder({ profile }) {
       }
 
       const url = resumeId
-        ? `https://career-vault-1xyt.onrender.com/api/resumes/${resumeId}`
-        : "https://career-vault-1xyt.onrender.com/api/resumes";
+        ? `/api/resumes/${resumeId}`
+        : "/api/resumes";
 
       const method =
         resumeId ? "PUT" : "POST";

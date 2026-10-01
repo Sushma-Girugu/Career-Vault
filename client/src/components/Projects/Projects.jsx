@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import "./Projects.css";
 import ProjectCard from "./ProjectCard";
 
-const API_URL = "https://career-vault-1xyt.onrender.com/api/projects";
+const API_URL = "/api/projects";
 
 function Projects() {
   const [projects, setProjects] = useState([]);

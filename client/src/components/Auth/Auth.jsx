@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const API = "https://career-vault-1xyt.onrender.com/api";
+const API = "/api";
 
 function Auth({ onLogin }) {
   const [mode, setMode] = useState("login");

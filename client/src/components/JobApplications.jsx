@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API = "https://career-vault-1xyt.onrender.com/api";
+const API = "/api";
 
 function JobApplications() {
   const [applications, setApplications] = useState([]);
