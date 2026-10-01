@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://career-vault-1xyt.onrender.com/api/:path*"
+      "destination": "https://career-vault-backend.onrender.com/api/:path*"
     }
   ]
 }
