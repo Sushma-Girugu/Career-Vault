@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./Portfolio.css";
 
-const API = "http://localhost:5000/api";
+const API = "https://career-vault-1xyt.onrender.com/api";
 
 function Portfolio() {
   const [profile, setProfile] = useState(null);

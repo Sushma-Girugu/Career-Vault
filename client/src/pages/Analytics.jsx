@@ -5,7 +5,7 @@ function Analytics() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/analytics")
+    fetch("https://career-vault-1xyt.onrender.com/api/analytics")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch analytics");

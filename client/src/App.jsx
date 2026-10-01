@@ -12,7 +12,7 @@ import Analytics from "./pages/Analytics";
 import NotificationPanel from "./components/NotificationPanel";
 
 
-const API = "http://localhost:5000/api";
+const API = "https://career-vault-1xyt.onrender.com/api";
 
 const emptyProfile = {
   name: "",

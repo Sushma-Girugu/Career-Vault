@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 
-const API = "http://localhost:5000/api";
+const API = "https://career-vault-1xyt.onrender.com/api";
 
 function Gemini({ profile, skills }) {
   const [prompt, setPrompt] = useState("");

@@ -19,7 +19,7 @@ function JobTest() {
       setAnswers({});
 
       const response = await fetch(
-        `http://localhost:5000/api/questions?category=${category}`
+        `https://career-vault-1xyt.onrender.com/api/questions?category=${category}`
       );
 
       const data = await response.json();

@@ -8,7 +8,7 @@ function NotificationPanel() {
   const fetchNotifications = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/notifications"
+        "https://career-vault-1xyt.onrender.com/api/notifications"
       );
 
       if (!response.ok) {
@@ -27,7 +27,7 @@ function NotificationPanel() {
   const fetchUnreadCount = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/notifications/unread-count"
+        "https://career-vault-1xyt.onrender.com/api/notifications/unread-count"
       );
 
       if (!response.ok) {
@@ -50,7 +50,7 @@ function NotificationPanel() {
   const markAsRead = async (id) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/notifications/${id}/read`,
+        `https://career-vault-1xyt.onrender.com/api/notifications/${id}/read`,
         {
           method: "PUT"
         }
@@ -70,7 +70,7 @@ function NotificationPanel() {
   const deleteNotification = async (id) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/notifications/${id}`,
+        `https://career-vault-1xyt.onrender.com/api/notifications/${id}`,
         {
           method: "DELETE"
         }

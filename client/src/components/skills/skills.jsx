@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./skills.css";
 
-const API = "http://localhost:5000/api";
+const API = "https://career-vault-1xyt.onrender.com/api";
 
 function Skills() {
   const [skills, setSkills] = useState([]);
