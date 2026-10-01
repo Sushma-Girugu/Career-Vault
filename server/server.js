@@ -44,6 +44,12 @@ const app = express();
 app.use(cors({
   origin: "https://career-vault-green.vercel.app"
 }));
+
+app.options(/.*/, cors({
+    origin: "https://career-vault-green.vercel.app",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 
 // =====================================================
